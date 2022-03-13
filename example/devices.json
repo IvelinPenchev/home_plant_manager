@@ -1,0 +1,18 @@
+{
+    "sensors": [
+        {
+            "id": "345",
+            "building": "factory",
+            "floor": "34",
+            "room": "0"
+        }
+    ],
+    "actuators": [
+        {
+            "id": "346",
+            "building": "factory",
+            "floor": "34",
+            "room": "0"
+        }
+    ]
+}
