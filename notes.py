@@ -10,3 +10,5 @@
 #  pip3 install -r requirements.txt
 
 
+# FLASK run: python -m flask run
+
