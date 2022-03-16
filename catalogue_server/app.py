@@ -22,3 +22,10 @@ def post_message_route_post():
     r = rq.post("http://127.0.0.1:5000/foo", json = {'data': '1', 'type': 'int'})
     print("r is: " + str(r))
     return my_server.globalData
+
+@app.route('/test', methods=['PUT'])
+def post_message_username_pass():
+    # json is: {'username': 'xxxx', 'password': 'xxxx'}
+    data = request.json
+    output = "username is: " + str(data["username"]) + ", and password is: " + str(data["password"])
+    return output
