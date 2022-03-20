@@ -1,96 +1,56 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# This program is dedicated to the public domain under the CC0 license.
+from telegram_bot_lib import *
 
-"""
-Simple Bot to reply to Telegram messages.
-
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Basic Echobot example, repeats messages.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
-import logging
-import json 
-
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram.ext.dispatcher import run_async
-from telegram import Chat
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-
-logger = logging.getLogger(__name__)
-
-
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
-def start(update, context):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi! You can now type /help ')
-
-
-def help(update, context):
-    """Send a message when the command /help is issued."""
-    id = get_chat_id(update.message)
-    print(id)
-    update.message.reply_text('Help! I am good!')
-
-
-# def auth(update, context):
-#     """Send a message when the command /help is issued."""
-#     chatid = Chat.id
-#     update.message.reply_text('What is your username? '+ str(chatid))
-    
-
-
-def echo(update, context):
-    """Echo the user message."""
-    update.message.reply_text(update.message.text)
-
-
-def error(update, context):
-    """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, context.error)
-
-def get_chat_id(message):
-        '''
-        Telegram chat type can be either "private", "group", "supergroup" or
-        "channel".
-        Return user ID if it is of type "private", chat ID otherwise.
-        '''
-
-        return message.chat.id 
-
-
-def main():
-    """Start the bot."""
+def main() -> None:
+    """Run the bot."""
     # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
-    conf = json.load(open("config.json"))
     token = conf["telegramToken"]
-    updater = Updater(token, use_context=True)
+    updater = Updater(token)
 
     # Get the dispatcher to register handlers
-    dp = updater.dispatcher
+    dispatcher = updater.dispatcher
 
-    # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    print(Chat.id)
-    # dp.add_handler(CommandHandler("auth", auth))
+    # Add conversation handler with the states CHOOSING, TYPING_CHOICE and TYPING_REPLY
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            CHOOSING: [
+                MessageHandler(
+                    # Filters.regex('^(Age|Favourite colour|Number of siblings)$'), regular_choice
+                    Filters.regex('^Edit Plants$'), edit_plants),                
+                MessageHandler(
+                    Filters.regex('^Log Watering$'), log_watering),
+                MessageHandler(
+                    Filters.regex('^Statistics$'), start),
+                MessageHandler(
+                    Filters.regex('^Account settings$'), start),
+            ],
+            TYPING_CHOICE: [
+                MessageHandler(
+                    Filters.text & ~(Filters.command | Filters.regex('^Done$')), regular_choice
+                )
+            ],
+            TYPING_REPLY: [
+                MessageHandler(
+                    Filters.text & ~(Filters.command | Filters.regex('^Done$')),
+                    received_information,
+                )
+            ],
+            CHOOSING_PLANTS: [
+                MessageHandler(
+                    # Filters.regex('^(Age|Favourite colour|Number of siblings)$'), regular_choice
+                    Filters.regex('^List plants$'), edit_plants),                
+                MessageHandler(
+                    Filters.regex('^Add plants$'), add_plants),
+                MessageHandler(
+                    Filters.regex('^Edit a plant$'), edit_a_plant),
+                MessageHandler(
+                    Filters.regex('^Back$'), start),
+            ],
+        },
+        fallbacks=[MessageHandler(Filters.regex('^Done$'), done)],
+    )
 
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, echo))
-
-    # log all errors
-    dp.add_error_handler(error)
+    dispatcher.add_handler(conv_handler)
 
     # Start the Bot
     updater.start_polling()

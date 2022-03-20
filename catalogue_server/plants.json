@@ -1,0 +1,27 @@
+{
+    "12345678": [
+        {
+            "id": "1",
+            "plant": "pothos",
+            "nickname": "pothos1",
+            "room": "34",
+            "watered": []
+        },
+        {
+            "id": "2",
+            "plant": "pothos",
+            "nickname": "pothos2",
+            "room": "34",
+            "watered": []
+        }
+    ],
+    "87654321": [
+        {
+            "id": "1",
+            "plant": "pothos",
+            "nickname": "pothos1",
+            "room": "34",
+            "watered": []
+        }
+    ]
+}

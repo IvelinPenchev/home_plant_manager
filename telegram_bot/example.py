@@ -58,6 +58,8 @@ def auth_username(update: Update, context: CallbackContext) -> int:
     return TYPING_USERNAME
 
 def auth_pass(update: Update, context: CallbackContext) -> int:
+    id = update.message.chat.id 
+    print(id)
     update.message.reply_text(
         "Now type in your password."
     )
@@ -97,6 +99,8 @@ def received_username(update: Update, context: CallbackContext) -> int:
     text = update.message.text
     category = user_data['choice']
     user_data[category] = text
+    chatid = update.message.chat.id
+    print(chatid)
     del user_data['choice']
 
     update.message.reply_text(
@@ -108,6 +112,9 @@ def received_username(update: Update, context: CallbackContext) -> int:
 
     update.message.reply_text(
         "Now type in your password.")
+
+    update.message.reply_text(chatid)
+    update.message.reply_text(str(chatid))
 
     return TYPING_PASS
 
