@@ -1,4 +1,24 @@
 {    
-    "telegramToken": "***REMOVED***",
-    "test_connection_url": "http://127.0.0.1:5000/checkconnection"
+    "catalogue": 
+    {
+        "server_url": "http://127.0.0.1",
+        "port": "5000",
+        "test_connection_url": "/checkconnection"
+    },
+    "telegram":
+    {
+        "telegramTokenLocation": "In the telegram bot folder"
+    },
+    "data_base":
+    {
+        "db_url": "http://127.0.0.1",
+        "port": "8000",
+        "test_connection_url": "/checkconnection",
+        "functions":
+        {
+            "get_plant_list": {"link": "/plants/list_plants", "description": "List all user plants"}
+        }
+        
+    }
+        
 }

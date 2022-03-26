@@ -3,7 +3,7 @@ from telegram_bot_lib import *
 def main() -> None:
     """Run the bot."""
     # Create the Updater and pass it your bot's token.
-    token = conf["telegramToken"]
+    token = json.load(open("token.json"))["telegramToken"]
     updater = Updater(token)
 
     # Get the dispatcher to register handlers
