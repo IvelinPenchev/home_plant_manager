@@ -51,7 +51,7 @@ markup_menu = ReplyKeyboardMarkup(reply_keyboard_menu, one_time_keyboard=True)
 markup_plants = ReplyKeyboardMarkup(reply_keyboard_plants, one_time_keyboard=True)
 
 conf = json.load(open("config.json"))
-is_connection_url = conf["test_connection_url"]
+is_connection_url = conf['catalogue']["server_url"] + ":" + conf['catalogue']["port"] + conf['catalogue']["test_connection_url"]
 
 server_down_msg = "Our server is down. Please try again later. We apologize for the inconvenience!"
 
