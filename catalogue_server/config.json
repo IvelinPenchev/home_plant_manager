@@ -18,6 +18,7 @@
         "functions":
         {
             "get_plant_list_url": "/plants/listplants",
+            "get_last_id_url": "/plants/getlastid",
             "add_plant_url": "/plants/add_plant",
             "plant_info": ["plant species", "plant nickname", "room"]
         }

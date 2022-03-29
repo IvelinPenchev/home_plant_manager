@@ -58,34 +58,22 @@ def list_plants():
         chat_id = rq.args.get('chat_id')
         list = my_plants.get_plants_json(chat_id)
     except KeyError:
-        return "error 404: no such chat id."
+        return "error 400: no such chat id."
     except:
         return "error 400: Something went wrong."
     return str(list)
 
-# @app.route('/plants/add_plant2', methods=['POST'])
-# def add_plants2():
-#     try:
-#         data = rq.args.get('data')
-#         print(data)
-#     except:
-#         print("1")
-#     try:
-#         data = rq.form['data']
-#         print(data)
-#     except:
-#         print("2")
-#     try:
-#         data = rq.get_json('data')
-#         print(data)
-#     except:
-#         print("3")
-#     try:
-#         data = rq.json
-#         print(data)
-#     except:
-#         print("4")
-#     return data
+@app.route('/plants/getlastid', methods=['GET'])
+def get_last_id():
+    my_plants.update_plants()
+    try:
+        chat_id = rq.args.get('chat_id')
+        last_plant_id = my_plants.plants[chat_id][-1]['id']
+    except KeyError:
+        return "error 400: no such chat id."
+    except:
+        return "error 400: Something went wrong."
+    return str(last_plant_id)
 
 @app.route('/plants/add_plant', methods=['POST'])
 def add_plants():
@@ -97,7 +85,6 @@ def add_plants():
         return "error 400: no such chat id."
     except:
         return "error 400: Something went wrong with the chat_id"
-
     try:
         plant = rq.json
     except ValueError:

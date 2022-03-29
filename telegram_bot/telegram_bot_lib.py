@@ -39,15 +39,20 @@ class TelegramBot:
         try:
             self.conf = json.load(open("config.json"))
             self.update_conf_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["get_config_url"]
-            self.update_conf()
+            self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
+            self.update_conf()            
+        except: 
+            print("Initialisation error: Could not update config.")
+        try:
             self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
             self.server_down_msg = "Our server is down. Please try again later. We apologize for the inconvenience!"
             self.list_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_plant_list_url"]
+            self.get_last_id_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_last_id_url"]
             self.add_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["add_plant_url"]
             self.plant_keys = self.conf['data_base']['functions']['plant_info']
         except: 
             print("Initialisation error: Could not read from config.")
-            
+
     def is_server_connection(self):
         try:
             requests.get(self.is_connection_url)
@@ -98,6 +103,30 @@ class TelegramBot:
         )
         return  self.TYPING_CHOICE
 
+    def post_json(self, url, json_string):
+        try:
+            requests.post(url, json = json_string)
+        except: 
+            print("Error: Could not post.")
+            print("url is: " + url)
+            print("json is: " + str(json_string))
+            return False
+        return True
+
+    def get_last_id(self,chat_id):
+        return requests.get(self.get_last_id_url + "?chat_id=" + str(chat_id)).text
+
+    def create_json(self,key_list,value_list):
+        res = {}
+        if len(key_list) == len(value_list):            
+            for key in key_list:
+                for value in value_list:
+                    res[key] = value
+                    value_list.remove(value)
+                    break 
+        else:
+            print ("Error in create_json: keys and values must be same length")
+        return res
 
     def received_information(self, update: Update, context: CallbackContext) -> int:
         """Store info provided by user and ask for the next category."""
@@ -106,11 +135,22 @@ class TelegramBot:
         category = user_data['category']
         if category == "add plant":
             context.user_data["add_plant_info"].append(text)
-            if len(user_data['add_plant_info']) >= len(self.plant_keys):
-                print("Sending")
-                update.message.reply_text("That plant is now added!",
-                reply_markup= self.markup_menu,
-                )
+            if len(context.user_data['add_plant_info']) >= len(self.plant_keys):
+                chatid = update.message.chat.id
+                id = str(int(self.get_last_id(chatid)) + 1)
+
+                self.plant_keys.insert(0, "id")
+                context.user_data["add_plant_info"].insert(0, id)
+                json_plant = self.create_json(self.plant_keys, context.user_data["add_plant_info"])
+                temp = self.add_plants_url
+
+                if self.post_json(self.add_plants_url, json_plant) == True:
+                    print("Sending")
+                    msg = "That plant is now added: \n" + self.beautify_json(json_plant)
+                else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
+                
+                update.message.reply_text(msg, reply_markup= self.markup_menu)
+                    
                 del context.user_data['category']
                 del context.user_data['add_plant_info']
 

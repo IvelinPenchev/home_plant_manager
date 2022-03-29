@@ -63,17 +63,18 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    # main()
-    url_1 = "http://127.0.0.2:8080/plants/add_plant?chat_id=12345678"
-    url_2 = "http://127.0.0.2:8080/plants/listplants?chat_id=12345678"
+    main()
+    # url_1 = "http://127.0.0.2:8080/plants/add_plant?chat_id=12345678"
+    # url_2 = "http://127.0.0.2:8080//plants/getlastid?chat_id=12345678"
 
-    j = {
-            "id": "6",
-            "plant species": "pothos",
-            "plant nickname": "pothos1112",
-            "room": "kitchen",
-            "watered": []
-        }
+    # j = {
+    #         "id": "6",
+    #         "plant species": "pothos",
+    #         "plant nickname": "pothos1112",
+    #         "room": "kitchen",
+    #         "watered": []
+    #     }
 
-    r = requests.post(url_1, json = j)
-    print(r.text)
+    # # r = requests.post(url_1, json = j)
+    # r = requests.get(url_2)
+    # print(r.text)
