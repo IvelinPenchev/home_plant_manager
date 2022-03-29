@@ -2,8 +2,9 @@
     "catalogue": 
     {
         "server_url": "http://127.0.0.1",
-        "port": "5000",
-        "test_connection_url": "/checkconnection"
+        "port": "8080",
+        "test_connection_url": "/checkconnection",
+        "get_config_url": "/getconfig"
     },
     "telegram":
     {
@@ -11,12 +12,14 @@
     },
     "data_base":
     {
-        "db_url": "http://127.0.0.1",
-        "port": "8000",
+        "db_url": "http://127.0.0.2",
+        "port": "8080",
         "test_connection_url": "/checkconnection",
         "functions":
         {
-            "get_plant_list_url": "/plants/list_plants"
+            "get_plant_list_url": "/plants/listplants",
+            "add_plant_url": "/plants/add_plant",
+            "plant_info": ["plant species", "plant nickname", "room"]
         }
         
     }

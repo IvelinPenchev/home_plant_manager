@@ -2,25 +2,39 @@
     "12345678": [
         {
             "id": "1",
-            "plant": "pothos",
-            "nickname": "pothos1",
+            "plant species": "pothos",
+            "plant nickname": "pothos1",
             "room": "34",
             "watered": []
         },
         {
             "id": "2",
-            "plant": "pothos",
-            "nickname": "pothos2",
+            "plant species": "pothos",
+            "plant nickname": "pothos2",
             "room": "34",
+            "watered": []
+        },
+        {
+            "id": "6",
+            "plant species": "pothos",
+            "plant nickname": "pothos1112",
+            "room": "kitchen",
             "watered": []
         }
     ],
-    "87654321": [
+    "5241737145": [
         {
             "id": "1",
-            "plant": "pothos",
-            "nickname": "pothos1",
-            "room": "34",
+            "plant species": "pothos",
+            "plant nickname": "pothos11",
+            "room": "kitchen",
+            "watered": []
+        },
+        {
+            "id": "2",
+            "plant species": "pothos",
+            "plant nickname": "pothos22",
+            "room": "living room",
             "watered": []
         }
     ]
