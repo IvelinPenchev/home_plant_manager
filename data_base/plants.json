@@ -22,7 +22,7 @@
             "watered": []
         }
     ],
-    "5241737145": [
+    "52417371450": [
         {
             "id": "1",
             "plant species": "pothos",
@@ -35,6 +35,20 @@
             "plant species": "pothos",
             "plant nickname": "pothos22",
             "room": "living room",
+            "watered": []
+        },
+        {
+            "id": "3",
+            "plant species": "Drazena",
+            "plant nickname": "Palma",
+            "room": "Kitchen",
+            "watered": []
+        },
+        {
+            "id": "4",
+            "plant species": "Calanthea",
+            "plant nickname": "Cali",
+            "room": "Living room",
             "watered": []
         }
     ]

@@ -49,7 +49,8 @@ class TelegramBot:
             self.list_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_plant_list_url"]
             self.get_last_id_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_last_id_url"]
             self.add_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["add_plant_url"]
-            self.plant_keys = self.conf['data_base']['functions']['plant_info']
+            self.plant_keys = self.conf['data_base']['functions']['plant_info_from_user']
+            self.extra_plant_data = self.conf['data_base']['functions']['plant_info_auto']
         except: 
             print("Initialisation error: Could not read from config.")
 
@@ -103,15 +104,18 @@ class TelegramBot:
         )
         return  self.TYPING_CHOICE
 
-    def post_json(self, url, json_string):
+    def post_json(self, url, json_string, chatid):
         try:
-            requests.post(url, json = json_string)
+            r = requests.post(url + "?chat_id="+str(chatid), json = json_string)
+            if (r.text == "200"): return True
+            else:
+                print("Error: Server returned " + r.text) 
+                return False
         except: 
             print("Error: Could not post.")
             print("url is: " + url)
             print("json is: " + str(json_string))
             return False
-        return True
 
     def get_last_id(self,chat_id):
         return requests.get(self.get_last_id_url + "?chat_id=" + str(chat_id)).text
@@ -128,6 +132,11 @@ class TelegramBot:
             print ("Error in create_json: keys and values must be same length")
         return res
 
+    def add_auto_data_to_dict(self,json_dict):
+        for dict in self.extra_plant_data:
+            json_dict.update(dict)
+        return json_dict
+
     def received_information(self, update: Update, context: CallbackContext) -> int:
         """Store info provided by user and ask for the next category."""
         user_data = context.user_data
@@ -139,13 +148,14 @@ class TelegramBot:
                 chatid = update.message.chat.id
                 id = str(int(self.get_last_id(chatid)) + 1)
 
-                self.plant_keys.insert(0, "id")
-                context.user_data["add_plant_info"].insert(0, id)
-                json_plant = self.create_json(self.plant_keys, context.user_data["add_plant_info"])
-                temp = self.add_plants_url
+                keys = self.plant_keys
+                keys.insert(0, "id")
+                values = context.user_data["add_plant_info"]
+                values.insert(0, id)
+                json_plant = self.create_json(keys, values)
+                json_plant = self.add_auto_data_to_dict(json_plant)
 
-                if self.post_json(self.add_plants_url, json_plant) == True:
-                    print("Sending")
+                if self.post_json(self.add_plants_url, json_plant, chatid) == True:
                     msg = "That plant is now added: \n" + self.beautify_json(json_plant)
                 else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
                 
@@ -177,9 +187,10 @@ class TelegramBot:
         """log watering functionality"""
         if  self.is_server_connection():
             update.message.reply_text(
-                "You want to water a plant? Do it!"
+            "Hi! That functionality is not available yet...",
+            reply_markup= self.markup_menu,
             )
-            return  self.TYPING_REPLY
+            return  self.CHOOSING
         else:
             update.message.reply_text(
             self.server_down_msg,
@@ -205,10 +216,10 @@ class TelegramBot:
     def edit_a_plant(self, update: Update, context: CallbackContext) -> int:
         if self.is_server_connection():
             update.message.reply_text(
-                "You want to edit a plant? Do it!"
+            "Hi! That functionality is not available yet...",
+            reply_markup= self.markup_menu,
             )
-            text = update.message.text
-            context.user_data['choice'] = text
+            return  self.CHOOSING
 
             # user_data = context.user_data
             # context.user_data['choice'] = 
@@ -223,8 +234,6 @@ class TelegramBot:
             reply_markup=self.markup_menu,
             )   
             return self.CHOOSING
-
-        return self.TYPING_REPLY
 
     def add_plants(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
@@ -302,5 +311,3 @@ class TelegramBot:
 
         user_data.clear()
         return ConversationHandler.END
-
-
