@@ -25,13 +25,13 @@ class TelegramBot:
         
         # possible options for user selection
         self.reply_keyboard_menu = [
-            ['Log Watering', 'Edit Plants'],
-            ['Statistics', 'Account settings'],
-            ['Done'],
+            ['Log Watering', 'Your Plants'],
+            ['Statistics', 'Done'],
         ]
         self.reply_keyboard_plants = [
             ['List plants', 'Add plants'],
-            ['Edit a plant', 'Back'],
+            ['Edit a plant', 'Delete a plant'],
+            ['Back']
         ]        
         self.markup_menu = ReplyKeyboardMarkup(self.reply_keyboard_menu, one_time_keyboard=True)
         self.markup_plants = ReplyKeyboardMarkup(self.reply_keyboard_plants, one_time_keyboard=True)
@@ -49,6 +49,7 @@ class TelegramBot:
             self.list_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_plant_list_url"]
             self.get_last_id_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_last_id_url"]
             self.add_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["add_plant_url"]
+            self.delete_plant_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["delete_plant_url"]
             self.plant_keys = self.conf['data_base']['functions']['plant_info_from_user']
             self.extra_plant_data = self.conf['data_base']['functions']['plant_info_auto']
         except: 
@@ -104,12 +105,12 @@ class TelegramBot:
         )
         return  self.TYPING_CHOICE
 
-    def post_json(self, url, json_string, chatid):
+    def rest_post_json(self, url, json_string, chatid):
         try:
             r = requests.post(url + "?chat_id="+str(chatid), json = json_string)
-            if (r.text == "200"): return True
+            if r.ok: return True
             else:
-                print("Error: Server returned " + r.text) 
+                print("Error: The data base server ran into an error") 
                 return False
         except: 
             print("Error: Could not post.")
@@ -117,8 +118,11 @@ class TelegramBot:
             print("json is: " + str(json_string))
             return False
 
-    def get_last_id(self,chat_id):
+    def rest_get_last_id(self,chat_id):
         return requests.get(self.get_last_id_url + "?chat_id=" + str(chat_id)).text
+
+    def rest_delete_plant(self, chat_id, plant_id):
+        return requests.delete(self.delete_plant_url + "?chat_id=" + str(chat_id) + "&plant_id=" + str(plant_id))
 
     def create_json(self,key_list,value_list):
         res = {}
@@ -146,16 +150,14 @@ class TelegramBot:
             context.user_data["add_plant_info"].append(text)
             if len(context.user_data['add_plant_info']) >= len(self.plant_keys):
                 chatid = update.message.chat.id
-                id = str(int(self.get_last_id(chatid)) + 1)
-
-                keys = self.plant_keys
+                id = str(int(self.rest_get_last_id(chatid)) + 1)
+                keys = self.plant_keys[:] # [:] is needed so a copy is created without linking
                 keys.insert(0, "id")
-                values = context.user_data["add_plant_info"]
+                values = context.user_data["add_plant_info"][:] # [:] is needed so a copy is created without linking
                 values.insert(0, id)
                 json_plant = self.create_json(keys, values)
                 json_plant = self.add_auto_data_to_dict(json_plant)
-
-                if self.post_json(self.add_plants_url, json_plant, chatid) == True:
+                if self.rest_post_json(self.add_plants_url, json_plant, chatid) == True:
                     msg = "That plant is now added: \n" + self.beautify_json(json_plant)
                 else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
                 
@@ -169,18 +171,21 @@ class TelegramBot:
                 plant_key = self.plant_keys[len(user_data['add_plant_info'])]
                 update.message.reply_text("What is the " + plant_key + "?")
                 return self.TYPING_REPLY
+
+        elif category == "delete plant":
+            chatid = update.message.chat.id
+            try:
+                r = self.rest_delete_plant(chatid, text)
+                if r.ok:
+                    msg = "Plant number " + str(text) + " is deleted."
+                else:
+                    msg = "Could not delete plant number " + str(text) + "."
+            except:
+                msg = "Error deleting plant number " + str(text) + "."
+                print(msg)
+            update.message.reply_text(msg, reply_markup= self.markup_menu)
+            return self.CHOOSING
                 
-
-
-        # user_data[category] = text
-        # del user_data['choice']
-
-        # update.message.reply_text(
-        #     "Neat! Just so you know, this is what you already told me:"
-        #     f"{ self.facts_to_str(user_data)} You can tell me more, or change your opinion"
-        #     " on something.",
-        #     reply_markup= self.markup_menu,
-        # )
         return  self.CHOOSING_PLANTS
 
     def log_watering(self, update: Update, context: CallbackContext) -> int:
@@ -198,7 +203,7 @@ class TelegramBot:
             )   
             return self.CHOOSING
 
-    def edit_plants(self, update: Update, context: CallbackContext) -> int:
+    def your_plants(self, update: Update, context: CallbackContext) -> int:
         """edit plants menu"""
         if self.is_server_connection():
             update.message.reply_text(
@@ -237,22 +242,10 @@ class TelegramBot:
 
     def add_plants(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
-        if self.is_server_connection():
-            # text = update.message.text
-            # user_data = context.user_data        
+        if self.is_server_connection():       
             update.message.reply_text("What is the plant species?")
             context.user_data['add_plant_info'] = []
             context.user_data['category'] = "add plant"
-            return self.TYPING_REPLY
-            
-                
-            
-            # context.user_data['choice'] = 
-            # text = update.message.text
-            # category = user_data['choice']
-            # user_data[category] = text
-            # del user_data['choice']
-            
             return self.TYPING_REPLY
         else: 
             update.message.reply_text(
@@ -262,14 +255,20 @@ class TelegramBot:
             return self.CHOOSING
 
     def get_plant_list(self, chat_id):
-        r = requests.get(self.list_plants_url + "?chat_id=" + str(chat_id)).text
-        r = r[r.find("[")+1:r.rfind("]")]
-        r = r[0:r.rfind("}")].split("},")
+        r = requests.get(self.list_plants_url + "?chat_id=" + str(chat_id))
         plant_list = []
-        for plant in r:
-            plant_list.append(ast.literal_eval((plant[plant.find("{"):] + "}")))
-        return plant_list        
-        
+        success = False
+        if r.ok:    
+            success = True
+            r = r.text    
+            r = r[r.find("[")+1:r.rfind("]")]
+            if bool(r):            
+                r = r[0:r.rfind("}")].split("},")           
+                for plant in r:
+                    plant_list.append(ast.literal_eval((plant[plant.find("{"):] + "}")))       
+        else:
+            print("Getting the plant list resulted in Error 500")
+        return [plant_list, success] 
 
     def beautify_json(self,plant_dict_string):
         keys = plant_dict_string.keys()
@@ -283,14 +282,34 @@ class TelegramBot:
     def list_plants(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
         if self.is_server_connection():
-            update.message.reply_text("Here are your plants")
             chatid = update.message.chat.id
-            plant_list = self.get_plant_list(chatid)
-            for plant in plant_list:
-                a = self.beautify_json(plant)
-                update.message.reply_text(a)
+            [plant_list, success] = self.get_plant_list(chatid)
+            if success:
+                if bool(plant_list): 
+                    update.message.reply_text("Here are your plants")                
+                    for plant in plant_list:
+                        for extra_dict in self.extra_plant_data:
+                            del(plant[list(extra_dict.keys())[0]])
+                        update.message.reply_text(self.beautify_json(plant))
+                else:
+                    update.message.reply_text("You got no plants! Add some!")
+            else:
+                update.message.reply_text("Something went wrong. We can't get you your plants. Try later!")
             update.message.reply_text("What now?", reply_markup=self.markup_plants)
             return self.CHOOSING_PLANTS
+        else: 
+            update.message.reply_text(
+            self.server_down_msg,
+            reply_markup=self.markup_menu,
+            )   
+            return self.CHOOSING
+    
+    def delete_a_plant(self, update: Update, context: CallbackContext) -> int:
+        if self.is_server_connection():    
+            self.list_plants
+            update.message.reply_text("Which plant do you want to delete? \n Type the id of the plant you want to delete.")
+            context.user_data['category'] = "delete plant"
+            return self.TYPING_REPLY
         else: 
             update.message.reply_text(
             self.server_down_msg,

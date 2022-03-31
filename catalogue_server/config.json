@@ -20,6 +20,7 @@
             "get_plant_list_url": "/plants/listplants",
             "get_last_id_url": "/plants/getlastid",
             "add_plant_url": "/plants/add_plant",
+            "delete_plant_url": "/plants/delete_plant",
             "plant_info_from_user": ["plant species", "plant nickname", "room"],
             "plant_info_auto": [{"watered": []}]
         }

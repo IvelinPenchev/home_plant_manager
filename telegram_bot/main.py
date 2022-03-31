@@ -17,7 +17,7 @@ def main() -> None:
             bot.CHOOSING: [
                 MessageHandler(
                     # Filters.regex('^(Age|Favourite colour|Number of siblings)$'), regular_choice
-                    Filters.regex('^Edit Plants$'), bot.edit_plants),                
+                    Filters.regex('^Your Plants$'), bot.your_plants),                
                 MessageHandler(
                     Filters.regex('^Log Watering$'), bot.log_watering),
                 MessageHandler(
@@ -45,6 +45,8 @@ def main() -> None:
                 MessageHandler(
                     Filters.regex('^Edit a plant$'), bot.edit_a_plant),
                 MessageHandler(
+                    Filters.regex('^Delete a plant$'), bot.delete_a_plant),
+                MessageHandler(
                     Filters.regex('^Back$'), bot.start),
             ],
         },
@@ -65,7 +67,8 @@ def main() -> None:
 if __name__ == '__main__':
     main()
     # url_1 = "http://127.0.0.2:8080/plants/add_plant?chat_id=12345678"
-    # url_2 = "http://127.0.0.2:8080//plants/getlastid?chat_id=12345678"
+    # url_2 = "http://127.0.0.2:8080/plants/getlastid?chat_id=123456789"
+    # url_3 = "http://127.0.0.2:8080/plants/delete_plant?chat_id=52417371450&plant_id=1"
 
     # j = {
     #         "id": "6",
@@ -76,5 +79,5 @@ if __name__ == '__main__':
     #     }
 
     # # r = requests.post(url_1, json = j)
-    # r = requests.get(url_2)
+    # r = requests.delete(url_3)
     # print(r.text)

@@ -24,30 +24,35 @@
     ],
     "52417371450": [
         {
-            "id": "1",
-            "plant species": "pothos",
-            "plant nickname": "pothos11",
-            "room": "kitchen",
-            "watered": []
-        },
-        {
             "id": "2",
             "plant species": "pothos",
             "plant nickname": "pothos22",
             "room": "living room",
             "watered": []
-        },
+        }
+    ],
+    "123456789": [],
+    "5241737145": [
         {
-            "id": "3",
-            "plant species": "Drazena",
-            "plant nickname": "Palma",
+            "id": "1",
+            "plant species": "Kalipotosa",
+            "plant nickname": "Divana",
             "room": "Kitchen",
             "watered": []
         },
         {
-            "id": "4",
-            "plant species": "Calanthea",
-            "plant nickname": "Cali",
+            "id": "2",
+            "plant species": "Pothos",
+            "plant nickname": "Kali",
+            "room": "Bagno",
+            "watered": []
+        }
+    ],
+    "5123428395": [
+        {
+            "id": "1",
+            "plant species": "Pilea",
+            "plant nickname": "Pilea Mom",
             "room": "Living room",
             "watered": []
         }
