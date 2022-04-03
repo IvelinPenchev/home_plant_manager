@@ -46,6 +46,13 @@
             "plant nickname": "Kali",
             "room": "Bagno",
             "watered": []
+        },
+        {
+            "id": "3",
+            "plant species": "Flower",
+            "plant nickname": "My flower",
+            "room": "Kitchen",
+            "watered": []
         }
     ],
     "5123428395": [

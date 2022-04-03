@@ -76,10 +76,7 @@ class TelegramBot:
                 print("Error: Could not update configs although server is up")
         else: print("Server is down. Could not update configs")
     
-    def facts_to_str(self, user_data: Dict[str, str]) -> str:
-        """Helper function for formatting the gathered user info."""
-        facts = [f'{key} - {value}' for key, value in user_data.items()]
-        return "\n".join(facts).join(['\n', '\n'])
+
 
     def start(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
@@ -90,20 +87,6 @@ class TelegramBot:
         )
         return  self.CHOOSING
 
-    def regular_choice(self, update: Update, context: CallbackContext) -> int:
-        """Ask the user for info about the selected predefined choice."""
-        text = update.message.text
-        context.user_data['choice'] = text
-        update.message.reply_text(f'Your {text.lower()}? Yes, I would love to hear about that!')
-
-        return  self.TYPING_REPLY
-
-    def custom_choice(self, update: Update, context: CallbackContext) -> int:
-        """Ask the user for a description of a custom category."""
-        update.message.reply_text(
-            'Alright, please send me the category first, for example "Most impressive skill"'
-        )
-        return  self.TYPING_CHOICE
 
     def rest_post_json(self, url, json_string, chatid):
         try:
@@ -169,7 +152,10 @@ class TelegramBot:
                 return self.CHOOSING
             else:       
                 plant_key = self.plant_keys[len(user_data['add_plant_info'])]
-                update.message.reply_text("What is the " + plant_key + "?")
+                if plant_key == "room":
+                    update.message.reply_text("In which " + plant_key + " is the plant?")
+                else:
+                    update.message.reply_text("What is the " + plant_key + "?")
                 return self.TYPING_REPLY
 
         elif category == "delete plant":
@@ -330,3 +316,23 @@ class TelegramBot:
 
         user_data.clear()
         return ConversationHandler.END
+
+
+    # def regular_choice(self, update: Update, context: CallbackContext) -> int:
+    #     """Ask the user for info about the selected predefined choice."""
+    #     text = update.message.text
+    #     context.user_data['choice'] = text
+    #     update.message.reply_text(f'Your {text.lower()}? Yes, I would love to hear about that!')
+
+    #     return  self.TYPING_REPLY
+
+    # def custom_choice(self, update: Update, context: CallbackContext) -> int:
+    #     """Ask the user for a description of a custom category."""
+    #     update.message.reply_text(
+    #         'Alright, please send me the category first, for example "Most impressive skill"'
+    #     )
+    #     return  self.TYPING_CHOICE
+    # def facts_to_str(self, user_data: Dict[str, str]) -> str:
+    #     """Helper function for formatting the gathered user info."""
+    #     facts = [f'{key} - {value}' for key, value in user_data.items()]
+    #     return "\n".join(facts).join(['\n', '\n'])
