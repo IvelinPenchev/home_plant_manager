@@ -49,6 +49,15 @@ def main() -> None:
                 MessageHandler(
                     Filters.regex('^Back$'), bot.start),
             ],
+            bot.LOG_WATERING: [
+                MessageHandler(
+                    # Filters.regex('^(Age|Favourite colour|Number of siblings)$'), regular_choice
+                    Filters.regex('^Watered now$'), bot.watered_now),                
+                MessageHandler(
+                    Filters.regex('^Watered in the past$'), bot.watered_past),
+                MessageHandler(
+                    Filters.regex('^Back$'), bot.start),
+            ],
         },
         fallbacks=[MessageHandler(Filters.regex('^Done$'), bot.done)],
     )

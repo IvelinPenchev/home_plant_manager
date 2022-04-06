@@ -3,6 +3,7 @@ from typing import Dict
 import json
 import requests
 import ast
+from datetime import date
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (
@@ -21,7 +22,7 @@ class TelegramBot:
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
-        self.CHOOSING, self.TYPING_REPLY, self.TYPING_CHOICE, self.CHOOSING_PLANTS, self.TYPING_PASS, self.EDIT_ADD_PLANT = range(6)
+        self.LOG_WATERING, self.CHOOSING, self.TYPING_REPLY, self.TYPING_CHOICE, self.CHOOSING_PLANTS, self.TYPING_PASS, self.EDIT_ADD_PLANT = range(7)
         
         # possible options for user selection
         self.reply_keyboard_menu = [
@@ -32,9 +33,14 @@ class TelegramBot:
             ['List plants', 'Add plants'],
             ['Edit a plant', 'Delete a plant'],
             ['Back']
-        ]        
+        ]
+        self.reply_keyboard_watering = [
+            ['Watered now', 'Watered in the past'],
+            ['Back']
+        ]          
         self.markup_menu = ReplyKeyboardMarkup(self.reply_keyboard_menu, one_time_keyboard=True)
         self.markup_plants = ReplyKeyboardMarkup(self.reply_keyboard_plants, one_time_keyboard=True)
+        self.markup_watering = ReplyKeyboardMarkup(self.reply_keyboard_watering, one_time_keyboard=True)
 
         try:
             self.conf = json.load(open("config.json"))
@@ -109,14 +115,17 @@ class TelegramBot:
 
     def create_json(self,key_list,value_list):
         res = {}
-        if len(key_list) == len(value_list):            
-            for key in key_list:
-                for value in value_list:
-                    res[key] = value
-                    value_list.remove(value)
-                    break 
-        else:
-            print ("Error in create_json: keys and values must be same length")
+        try:
+            if len(key_list) == len(value_list):            
+                for key in key_list:
+                    for value in value_list:
+                        res[key] = value
+                        value_list.remove(value)
+                        break 
+            else:
+                print ("Error in create_json: keys and values must be same length")
+        except:
+            print("Error: Could not convert to json in 'create_json'")
         return res
 
     def add_auto_data_to_dict(self,json_dict):
@@ -171,17 +180,48 @@ class TelegramBot:
                 print(msg)
             update.message.reply_text(msg, reply_markup= self.markup_menu)
             return self.CHOOSING
+        elif category == "water":
+            pass
+        elif category == "water past":
+            update.message.reply_text(
+            "Which plants did you water? Enter the Plant IDs, separated by comma ',' for example: 1,5,8")
+            context.user_data['category'] = "water"
+            context.user_data['date'] = text
+            return  self.TYPING_REPLY
+            
                 
         return  self.CHOOSING_PLANTS
 
     def log_watering(self, update: Update, context: CallbackContext) -> int:
         """log watering functionality"""
+        update.message.reply_text(
+        "You watered your plants! That should keep them alive.")
+        update.message.reply_text("You have two options: Log watering that you did today or in the past",
+        reply_markup= self.markup_watering,
+        )
+        return  self.LOG_WATERING
+
+    def watered_now(self, update: Update, context: CallbackContext) -> int:
+        if  self.is_server_connection():
+            today = date.today()
+            update.message.reply_text(
+            "Which plants did you just water? Enter the Plant IDs, separated by comma ',' for example: 1,5,8")
+            context.user_data['category'] = "water"
+            context.user_data['date'] = today.strftime("%d/%m/%Y")
+            return  self.TYPING_REPLY
+        else:
+            update.message.reply_text(
+            self.server_down_msg,
+            reply_markup= self.markup_menu,
+            )   
+            return self.CHOOSING
+    
+    def watered_past(self, update: Update, context: CallbackContext) -> int:
         if  self.is_server_connection():
             update.message.reply_text(
-            "Hi! That functionality is not available yet...",
-            reply_markup= self.markup_menu,
-            )
-            return  self.CHOOSING
+            "When did you water your plants? Enter in format dd/mm/yyyy, for example 22.02.2022")
+            context.user_data['category'] = "water past"
+            return  self.TYPING_REPLY
         else:
             update.message.reply_text(
             self.server_down_msg,
