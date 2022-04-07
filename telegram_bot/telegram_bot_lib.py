@@ -15,25 +15,27 @@ from telegram.ext import (
     CallbackContext,
 )
 
-# from telegram_bot.old_examples.telegram_bot_lib_old import CHOOSING
-
+# class with all functions for interacting with the telegram bot
 class TelegramBot:
     def __init__(self):
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
+        # states to be used by the Conversation Handler from the python-telegram-bot library
         self.LOG_WATERING, self.CHOOSING, self.TYPING_REPLY, self.TYPING_CHOICE, self.CHOOSING_PLANTS, self.TYPING_PASS, self.EDIT_ADD_PLANT = range(7)
         
-        # possible options for user selection
+        # possible options for user selection in the main menu
         self.reply_keyboard_menu = [
             ['Log Watering', 'Your Plants'],
             ['Statistics', 'Done'],
         ]
+        # possible options for user selection in the plants menu
         self.reply_keyboard_plants = [
             ['List plants', 'Add plants'],
             ['Edit a plant', 'Delete a plant'],
             ['Back']
         ]
+        # possible options for user selection in the watering menu
         self.reply_keyboard_watering = [
             ['Watered now', 'Watered in the past'],
             ['Back']
@@ -43,24 +45,27 @@ class TelegramBot:
         self.markup_watering = ReplyKeyboardMarkup(self.reply_keyboard_watering, one_time_keyboard=True)
 
         try:
+            # get necessary data before updating the configuration file
             self.conf = json.load(open("config.json"))
             self.update_conf_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["get_config_url"]
             self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
-            self.update_conf()            
+            self.update_conf()       
         except: 
             print("Initialisation error: Could not update config.")
         try:
+            # extract data from the config
             self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
-            self.server_down_msg = "Our server is down. Please try again later. We apologize for the inconvenience!"
             self.list_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_plant_list_url"]
             self.get_last_id_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_last_id_url"]
             self.add_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["add_plant_url"]
             self.delete_plant_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["delete_plant_url"]
             self.plant_keys = self.conf['data_base']['functions']['plant_info_from_user']
             self.extra_plant_data = self.conf['data_base']['functions']['plant_info_auto']
+            self.server_down_msg = "Our server is down. Please try again later. We apologize for the inconvenience!"
         except: 
             print("Initialisation error: Could not read from config.")
 
+    # function for checking if there is connection with the service catalogue
     def is_server_connection(self):
         try:
             requests.get(self.is_connection_url)
@@ -72,6 +77,7 @@ class TelegramBot:
             return False
         return True
 
+    # function for replacing the config file with the newest version of it
     def update_conf(self):
         if(self.is_server_connection):
             try:
@@ -82,83 +88,55 @@ class TelegramBot:
                 print("Error: Could not update configs although server is up")
         else: print("Server is down. Could not update configs")
     
+    ################## TELEGRAM FUNCTIONS ############################
 
-
+    # triggered when /start is written by user. 
     def start(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
         update.message.reply_text(
             "Hi! Welcome to your home plant manager! "
             "Please select what you would like to do!",
-            reply_markup= self.markup_menu,
+            reply_markup= self.markup_menu, # the user buttons in the chat defined by markum_menu
         )
-        return  self.CHOOSING
+        return  self.CHOOSING # following that is the menu for choosing from the main menu
 
-
-    def rest_post_json(self, url, json_string, chatid):
-        try:
-            r = requests.post(url + "?chat_id="+str(chatid), json = json_string)
-            if r.ok: return True
-            else:
-                print("Error: The data base server ran into an error") 
-                return False
-        except: 
-            print("Error: Could not post.")
-            print("url is: " + url)
-            print("json is: " + str(json_string))
-            return False
-
-    def rest_get_last_id(self,chat_id):
-        return requests.get(self.get_last_id_url + "?chat_id=" + str(chat_id)).text
-
-    def rest_delete_plant(self, chat_id, plant_id):
-        return requests.delete(self.delete_plant_url + "?chat_id=" + str(chat_id) + "&plant_id=" + str(plant_id))
-
-    def create_json(self,key_list,value_list):
-        res = {}
-        try:
-            if len(key_list) == len(value_list):            
-                for key in key_list:
-                    for value in value_list:
-                        res[key] = value
-                        value_list.remove(value)
-                        break 
-            else:
-                print ("Error in create_json: keys and values must be same length")
-        except:
-            print("Error: Could not convert to json in 'create_json'")
-        return res
-
-    def add_auto_data_to_dict(self,json_dict):
-        for dict in self.extra_plant_data:
-            json_dict.update(dict)
-        return json_dict
-
+    # handles typed in information from user based on "category"
     def received_information(self, update: Update, context: CallbackContext) -> int:
         """Store info provided by user and ask for the next category."""
-        user_data = context.user_data
-        text = update.message.text
+        user_data = context.user_data 
+        text = update.message.text # get input data from user
         category = user_data['category']
+
+        ####### Handle the input text based on what its category is #####
+        ### ADDING PLANTS 
         if category == "add plant":
-            context.user_data["add_plant_info"].append(text)
+            context.user_data["add_plant_info"].append(text) # save the input
+
+            # if the user has added all the reqired plant info, then proceed to sending the plant info to the DB
             if len(context.user_data['add_plant_info']) >= len(self.plant_keys):
-                chatid = update.message.chat.id
+                chatid = update.message.chat.id 
                 id = str(int(self.rest_get_last_id(chatid)) + 1)
                 keys = self.plant_keys[:] # [:] is needed so a copy is created without linking
                 keys.insert(0, "id")
                 values = context.user_data["add_plant_info"][:] # [:] is needed so a copy is created without linking
                 values.insert(0, id)
                 json_plant = self.create_json(keys, values)
-                json_plant = self.add_auto_data_to_dict(json_plant)
-                if self.rest_post_json(self.add_plants_url, json_plant, chatid) == True:
+                json_plant = self.add_auto_data_to_dict(json_plant) # add the default data, such as "watered: []"
+                
+                # posting the plant to the DB
+                if self.rest_post_json(self.add_plants_url, json_plant, chatid):
                     msg = "That plant is now added: \n" + self.beautify_json(json_plant)
                 else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
                 
                 update.message.reply_text(msg, reply_markup= self.markup_menu)
-                    
+                
+                # task is done, so clear all the used temp data
                 del context.user_data['category']
                 del context.user_data['add_plant_info']
 
-                return self.CHOOSING
+                return self.CHOOSING # go back to main menu
+
+            # if the user hasn't added all the info yet, proceed to asking for more data
             else:       
                 plant_key = self.plant_keys[len(user_data['add_plant_info'])]
                 if plant_key == "room":
@@ -167,6 +145,7 @@ class TelegramBot:
                     update.message.reply_text("What is the " + plant_key + "?")
                 return self.TYPING_REPLY
 
+        ### DELETING PLANTS 
         elif category == "delete plant":
             chatid = update.message.chat.id
             try:
@@ -180,18 +159,22 @@ class TelegramBot:
                 print(msg)
             update.message.reply_text(msg, reply_markup= self.markup_menu)
             return self.CHOOSING
+
+        ### If the date of the watering is known already
         elif category == "water":
             pass
+        ### If the watering date was in the past, and needs to be saved
         elif category == "water past":
+            context.user_data['date'] = text
             update.message.reply_text(
             "Which plants did you water? Enter the Plant IDs, separated by comma ',' for example: 1,5,8")
             context.user_data['category'] = "water"
-            context.user_data['date'] = text
             return  self.TYPING_REPLY
             
                 
-        return  self.CHOOSING_PLANTS
+        return  self.CHOOSING_PLANTS # 
 
+    # function for the user to choose between logging a watering from today or from the past.
     def log_watering(self, update: Update, context: CallbackContext) -> int:
         """log watering functionality"""
         update.message.reply_text(
@@ -201,6 +184,7 @@ class TelegramBot:
         )
         return  self.LOG_WATERING
 
+    # If the user chooses to log watering from today, the date is known, so we only need the plant IDs
     def watered_now(self, update: Update, context: CallbackContext) -> int:
         if  self.is_server_connection():
             today = date.today()
@@ -216,6 +200,7 @@ class TelegramBot:
             )   
             return self.CHOOSING
     
+    # If the user chooses to log watering from the past, the date is unknown, so we need to ask him about it
     def watered_past(self, update: Update, context: CallbackContext) -> int:
         if  self.is_server_connection():
             update.message.reply_text(
@@ -229,6 +214,7 @@ class TelegramBot:
             )   
             return self.CHOOSING
 
+    # your plants menu
     def your_plants(self, update: Update, context: CallbackContext) -> int:
         """edit plants menu"""
         if self.is_server_connection():
@@ -244,6 +230,8 @@ class TelegramBot:
             )   
             return self.CHOOSING
 
+
+    # if user chooses "edit a plant" from the plant menu
     def edit_a_plant(self, update: Update, context: CallbackContext) -> int:
         if self.is_server_connection():
             update.message.reply_text(
@@ -266,6 +254,7 @@ class TelegramBot:
             )   
             return self.CHOOSING
 
+    # if user chooses "add a plant" from the plant menu
     def add_plants(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
         if self.is_server_connection():       
@@ -280,40 +269,18 @@ class TelegramBot:
             )   
             return self.CHOOSING
 
-    def get_plant_list(self, chat_id):
-        r = requests.get(self.list_plants_url + "?chat_id=" + str(chat_id))
-        plant_list = []
-        success = False
-        if r.ok:    
-            success = True
-            r = r.text    
-            r = r[r.find("[")+1:r.rfind("]")]
-            if bool(r):            
-                r = r[0:r.rfind("}")].split("},")           
-                for plant in r:
-                    plant_list.append(ast.literal_eval((plant[plant.find("{"):] + "}")))       
-        else:
-            print("Getting the plant list resulted in Error 500")
-        return [plant_list, success] 
-
-    def beautify_json(self,plant_dict_string):
-        keys = plant_dict_string.keys()
-        string = ""
-
-        for key in keys:
-            string += (str(key) + ": " + str(plant_dict_string[key]) + "\n")
-
-        return string
-
+    # if user chooses "list plants" from the plant menu
     def list_plants(self, update: Update, context: CallbackContext) -> int:
         """Start the conversation and ask user for input."""
         if self.is_server_connection():
             chatid = update.message.chat.id
-            [plant_list, success] = self.get_plant_list(chatid)
-            if success:
+            [plant_list, success] = self.rest_get_plant_list(chatid)
+            # if getting the plant list was succesful
+            if success: 
                 if bool(plant_list): 
                     update.message.reply_text("Here are your plants")                
                     for plant in plant_list:
+                        # list plants without the extra unnecesary data (such as watering logs)
                         for extra_dict in self.extra_plant_data:
                             del(plant[list(extra_dict.keys())[0]])
                         update.message.reply_text(self.beautify_json(plant))
@@ -330,6 +297,7 @@ class TelegramBot:
             )   
             return self.CHOOSING
     
+    # if user chooses "delete a plant" from the plant menu
     def delete_a_plant(self, update: Update, context: CallbackContext) -> int:
         if self.is_server_connection():    
             self.list_plants
@@ -343,7 +311,7 @@ class TelegramBot:
             )   
             return self.CHOOSING
 
-
+    # if user at anu points writes "Done", then the chat is being closed.
     def done(self, update: Update, context: CallbackContext) -> int:
         user_data = context.user_data
         if 'choice' in user_data:
@@ -357,22 +325,79 @@ class TelegramBot:
         user_data.clear()
         return ConversationHandler.END
 
+###################### REST METHODS ###########################
 
-    # def regular_choice(self, update: Update, context: CallbackContext) -> int:
-    #     """Ask the user for info about the selected predefined choice."""
-    #     text = update.message.text
-    #     context.user_data['choice'] = text
-    #     update.message.reply_text(f'Your {text.lower()}? Yes, I would love to hear about that!')
+    # send a "get" request to get all plants of a user
+    def rest_get_plant_list(self, chat_id):
+            r = requests.get(self.list_plants_url + "?chat_id=" + str(chat_id))
+            plant_list = []
+            success = False
+            if r.ok:    
+                success = True
+                r = r.text    
+                r = r[r.find("[")+1:r.rfind("]")]
+                if bool(r):            
+                    r = r[0:r.rfind("}")].split("},")           
+                    for plant in r:
+                        plant_list.append(ast.literal_eval((plant[plant.find("{"):] + "}")))       
+            else:
+                print("Getting the plant list resulted in Error 500")
+            return [plant_list, success] 
 
-    #     return  self.TYPING_REPLY
+    # send a "post" request to a url, where querry is chat_id and payload is a json_string
+    def rest_post_json(self, url, json_string, chatid):
+        try:
+            r = requests.post(url + "?chat_id="+str(chatid), json = json_string)
+            if r.ok: return True
+            else:
+                print("Error: The data base server ran into an error") 
+                return False
+        except: 
+            print("Error: Could not post.")
+            print("url is: " + url)
+            print("json is: " + str(json_string))
+            return False
 
-    # def custom_choice(self, update: Update, context: CallbackContext) -> int:
-    #     """Ask the user for a description of a custom category."""
-    #     update.message.reply_text(
-    #         'Alright, please send me the category first, for example "Most impressive skill"'
-    #     )
-    #     return  self.TYPING_CHOICE
-    # def facts_to_str(self, user_data: Dict[str, str]) -> str:
-    #     """Helper function for formatting the gathered user info."""
-    #     facts = [f'{key} - {value}' for key, value in user_data.items()]
-    #     return "\n".join(facts).join(['\n', '\n'])
+    # send a get request for getting the last used plant id for a user
+    def rest_get_last_id(self,chat_id):
+        return requests.get(self.get_last_id_url + "?chat_id=" + str(chat_id)).text
+
+    # send a "delete" request for deleting plant by plant_id and chat_id
+    def rest_delete_plant(self, chat_id, plant_id):
+        return requests.delete(self.delete_plant_url + "?chat_id=" + str(chat_id) + "&plant_id=" + str(plant_id))
+    
+    
+    ###################### AUXILIARY METHODS ####################
+
+    # takes a dictionary and makes in representable form for the user
+    def beautify_json(self,plant_dict_string):
+        keys = plant_dict_string.keys()
+        string = ""
+
+        for key in keys:
+            string += (str(key) + ": " + str(plant_dict_string[key]) + "\n")
+
+        return string
+
+    # creates a json from a list of keys and a list of values
+    def create_json(self,key_list,value_list):
+        res = {}
+        try:
+            if len(key_list) == len(value_list):            
+                for key in key_list:
+                    for value in value_list:
+                        res[key] = value
+                        value_list.remove(value)
+                        break 
+            else:
+                print ("Error in create_json: keys and values must be same length")
+        except:
+            print("Error: Could not convert to json in 'create_json'")
+        return res
+
+
+    # takes as input a json dictionary and adds to it the default data key-value pairs (such as "watered: []")
+    def add_auto_data_to_dict(self,json_dict):
+        for dict in self.extra_plant_data:
+            json_dict.update(dict)
+        return json_dict
