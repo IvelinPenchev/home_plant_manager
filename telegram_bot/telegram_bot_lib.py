@@ -160,17 +160,17 @@ class TelegramBot:
             update.message.reply_text(msg, reply_markup= self.markup_menu)
             return self.CHOOSING
 
-        ### If the date of the watering is known already
+        ### WATERING PLANTS
+        # If the date of the watering is known already
         elif category == "water":
             pass
-        ### If the watering date was in the past, and needs to be saved
+        # If the watering date was in the past, and needs to be saved
         elif category == "water past":
             context.user_data['date'] = text
             update.message.reply_text(
             "Which plants did you water? Enter the Plant IDs, separated by comma ',' for example: 1,5,8")
             context.user_data['category'] = "water"
-            return  self.TYPING_REPLY
-            
+            return  self.TYPING_REPLY           
                 
         return  self.CHOOSING_PLANTS # 
 
