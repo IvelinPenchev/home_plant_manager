@@ -44,7 +44,7 @@ class myPlants:
 
     def get_plants_json(self, chat_id):
         self.update_plants()
-        return str(self.plants[chat_id])
+        return str(self.plants[chat_id]["plants"])
 
     def create_user_if_not_exist(self, chat_id):
         self.update_plants()
@@ -54,7 +54,7 @@ class myPlants:
             except KeyError:
                 with open('plants.json', 'r+') as f:
                     all_plants = json.load(f)
-                    all_plants[chat_id] = []
+                    all_plants[chat_id]["plants"] = []
                     f.seek(0)
                     json.dump(all_plants, f, indent=4)
                     f.truncate()     # remove remaining part
@@ -67,38 +67,24 @@ my_plants = myPlants()
 db_host = my_plants.db_server[0].replace("http://","",1)
 db_port = my_plants.db_server[1]
 
-@app.route('/plants/listplants', methods=['GET'])
-def list_plants():
-    my_plants.update_plants()
-    try:
-        pass
-        chat_id = rq.args.get('chat_id')
-        my_plants.create_user_if_not_exist(chat_id)
-        list = my_plants.get_plants_json(chat_id)
-    except:
-        print("error 500: Something went wrong with listing plants.")
-        abort(500)
-    return str(list)
+@app.route(my_plants.conf['data_base']['functions']['get_plant_list_url'], methods=['GET', 'POST'])
+def plants():
+    #### List plants 
+    if rq.method == 'GET':    
+        my_plants.update_plants()
+        try:
+            pass
+            chat_id = rq.args.get('chat_id')
+            my_plants.create_user_if_not_exist(chat_id)
+            list = my_plants.get_plants_json(chat_id)
+        except:
+            print("error 500: Something went wrong with listing plants.")
+            abort(500)
+        return str(list)
 
-@app.route('/plants/getlastid', methods=['GET'])
-def get_last_id():
-    my_plants.update_plants()
-    try:
-        chat_id = rq.args.get('chat_id')
-        my_plants.create_user_if_not_exist(chat_id)
-        if not bool(my_plants.plants[chat_id]): return str(0)
-        last_plant_id = my_plants.plants[chat_id][-1]['id']
-    except KeyError:
-        print ("error 500: invalid id.")
-        abort(500)
-    except:
-        print ("error 500: Something went wrong with getting last id.")
-        abort(500)
-    return str(last_plant_id)
-
-@app.route('/plants/add_plant', methods=['POST'])
-def add_plants():
-    my_plants.update_plants()
+    #### Add plants 
+    elif rq.method == 'POST':
+         my_plants.update_plants()
     print("attempting to add a new plant!")
     try:
         chat_id = rq.args.get('chat_id')
@@ -119,7 +105,7 @@ def add_plants():
     if plant is dict or type(plant)== dict:
         with open('plants.json', 'r+') as f:
             all_plants = json.load(f)
-            all_plants[chat_id].append(plant)
+            all_plants[chat_id]["plants"].append(plant)
             f.seek(0)
             json.dump(all_plants, f, indent=4)
             f.truncate()     # remove remaining part
@@ -130,14 +116,32 @@ def add_plants():
 
     return "True"
 
-@app.route('/plants/delete_plant', methods=['DELETE'])
+
+@app.route(my_plants.conf['data_base']['functions']['get_last_id_url'], methods=['GET'])
+def get_last_id():
+    my_plants.update_plants()
+    try:
+        chat_id = rq.args.get('chat_id')
+        my_plants.create_user_if_not_exist(chat_id)
+        if not bool(my_plants.plants[chat_id]["plants"]): return str(0)
+        last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
+    except KeyError:
+        print ("error 500: invalid id.")
+        abort(500)
+    except:
+        print ("error 500: Something went wrong with getting last id.")
+        abort(500)
+    return str(last_plant_id)
+
+
+@app.route(my_plants.conf['data_base']['functions']['delete_plant_url'], methods=['DELETE'])
 def delete_plant():
     try:
         chat_id = rq.args.get('chat_id')
         plant_id = rq.args.get('plant_id')
         with open('plants.json', 'r+') as f:
             all_plants = json.load(f)
-            list = all_plants[chat_id]
+            list = all_plants[chat_id]["plants"]
             success = False
             for count, dict in enumerate(list):
                 if dict['id'] == plant_id:
@@ -154,6 +158,10 @@ def delete_plant():
         print("Something went wrong with deleting a plant")
         abort(500)
     return "True"
+
+@app.route(my_plants.conf['data_base']['functions']['water_plant_url'], methods=['POST'])
+def log_watering():
+
 
 
 

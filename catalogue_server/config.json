@@ -17,11 +17,11 @@
         "test_connection_url": "/checkconnection",
         "functions":
         {
-            "get_plant_list_url": "/plants/user_id",
-            "get_last_id_url": "/plants/user_id/last_plant_id",
-            "add_plant_url": "/plants/user_id",
-            "delete_plant_url": "/plants/user_id/plant_id",
-            "water_plant_url": "/plants/user_id/plant_id",
+            "get_plant_list_url": "/users/user_id/plants",
+            "get_last_id_url": "/users/user_id/plants/last_plant_id",
+            "add_plant_url": "/users/user_id/plants",
+            "delete_plant_url": "/users/user_id/plants/plant_id",
+            "water_plant_url": "/users/user_id/plants/plant_id/watering",
             "plant_info_from_user": ["plant species", "plant nickname", "room"],
             "plant_info_auto": [{"watered": []}]
         }        
