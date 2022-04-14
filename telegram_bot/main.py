@@ -27,7 +27,7 @@ def main() -> None:
             ],
             bot.TYPING_CHOICE: [
                 MessageHandler(
-                    Filters.text & ~(Filters.command | Filters.regex('^Done$')), bot.regular_choice
+                    Filters.text & ~(Filters.command | Filters.regex('^Done$')), bot.start 
                 )
             ],
             bot.TYPING_REPLY: [

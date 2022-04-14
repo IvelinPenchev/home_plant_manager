@@ -54,6 +54,7 @@ class myPlants:
             except KeyError:
                 with open('plants.json', 'r+') as f:
                     all_plants = json.load(f)
+                    all_plants[chat_id] = {}
                     all_plants[chat_id]["plants"] = []
                     f.seek(0)
                     json.dump(all_plants, f, indent=4)
@@ -70,7 +71,7 @@ db_port = my_plants.db_server[1]
 @app.route(my_plants.conf['data_base']['functions']['get_plant_list_url'], methods=['GET', 'POST'])
 def plants():
     #### List plants 
-    if rq.method == 'GET':    
+    if rq.method == 'GET': 
         my_plants.update_plants()
         try:
             pass
@@ -145,7 +146,7 @@ def delete_plant():
             success = False
             for count, dict in enumerate(list):
                 if dict['id'] == plant_id:
-                    del all_plants[chat_id][count]
+                    del all_plants[chat_id]["plants"][count]
                     success = True
                     break
             f.seek(0)
@@ -159,8 +160,8 @@ def delete_plant():
         abort(500)
     return "True"
 
-@app.route(my_plants.conf['data_base']['functions']['water_plant_url'], methods=['POST'])
-def log_watering():
+# @app.route(my_plants.conf['data_base']['functions']['water_plant_url'], methods=['POST'])
+# def log_watering():
 
 
 
