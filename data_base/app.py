@@ -2,6 +2,7 @@ from flask import Flask, jsonify, abort
 from flask import request as rq
 import requests
 import json
+from markupsafe import escape
 
 class myPlants:
     def __init__(self):
@@ -160,8 +161,14 @@ def delete_plant():
         abort(500)
     return "True"
 
-# @app.route(my_plants.conf['data_base']['functions']['water_plant_url'], methods=['POST'])
-# def log_watering():
+@app.route(my_plants.conf['data_base']['functions']['water_plant_url'], methods=['POST'])
+def log_watering():
+    pass
+
+@app.route("/users/<user>/plant", methods=['GET'])
+def Test(user):
+    return f'User {escape(user)}'
+
 
 
 

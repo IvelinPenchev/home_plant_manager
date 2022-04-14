@@ -4,6 +4,8 @@ import json
 import requests
 import ast
 from datetime import date
+from datetime import datetime
+
 
 from telegram import ReplyKeyboardMarkup, Update, ReplyKeyboardRemove
 from telegram.ext import (
@@ -124,7 +126,7 @@ class TelegramBot:
                 json_plant = self.add_auto_data_to_dict(json_plant) # add the default data, such as "watered: []"
                 
                 # posting the plant to the DB
-                if self.rest_post_json(self.add_plants_url, json_plant, chatid):
+                if self.rest_post_json(self.add_plants_url, json_plant, {"chat_id":chatid}):
                     msg = "That plant is now added: \n" + self.beautify_json(json_plant)
                 else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
                 
@@ -166,6 +168,15 @@ class TelegramBot:
             pass
         # If the watering date was in the past, and needs to be saved
         elif category == "water past":
+            format = "%d/%m/%Y"
+            try:
+                datetime.strptime(text, format)
+            except ValueError:
+                # if format is incorrect, let user try again.
+                print("Incorrect date format. Enter in format dd/mm/yyyy, for example 22.02.2022")
+                context.user_data['category'] = "water past"
+                return  self.TYPING_REPLY   
+
             context.user_data['date'] = text
             update.message.reply_text(
             "Which plants did you water? Enter the Plant IDs, separated by comma ',' for example: 1,5,8")
@@ -334,23 +345,23 @@ class TelegramBot:
             success = False
             if r.ok:    
                 success = True
-                r = r.text    
-                r = r[r.find("[")+1:r.rfind("]")]
-                if bool(r):            
-                    r = r[0:r.rfind("}")].split("},")           
-                    for plant in r:
-                        plant_list.append(ast.literal_eval((plant[plant.find("{"):] + "}")))       
+                r = r.text
+                plant_list = list(ast.literal_eval(r)) # convert string to list of dictionaries
             else:
-                print("Getting the plant list resulted in Error 500")
+                print("Getting the plant list resulted in some error")
             return [plant_list, success] 
 
     # send a "post" request to a url, where querry is chat_id and payload is a json_string
-    def rest_post_json(self, url, json_string, chatid):
+    def rest_post_json(self, url, json_string, params_dict):
         try:
-            r = requests.post(url + "?chat_id="+str(chatid), json = json_string)
+            query = "?"
+            for key in params_dict:
+                if len(query) > 1:  query+= "&"
+                query += str(key) + "=" + str(params_dict[key]) 
+            r = requests.post(url + query, json = json_string)
             if r.ok: return True
             else:
-                print("Error: The data base server ran into an error") 
+                print("Error: Posting data to server ended up in an error") 
                 return False
         except: 
             print("Error: Could not post.")
