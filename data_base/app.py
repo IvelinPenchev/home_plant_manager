@@ -1,3 +1,4 @@
+from hashlib import new
 from flask import Flask, jsonify, abort
 from flask import request as rq
 import requests
@@ -68,15 +69,16 @@ app = Flask(__name__)
 my_plants = myPlants()
 db_host = my_plants.db_server[0].replace("http://","",1)
 db_port = my_plants.db_server[1]
+print(db_host + db_port)
 
-@app.route(my_plants.conf['data_base']['functions']['get_plant_list_url'], methods=['GET', 'POST'])
-def plants():
+@app.route(my_plants.conf['data_base']['endpoints']['all_plants_of_user_id'], methods=['GET', 'POST'])
+def plants(user):
     #### List plants 
-    if rq.method == 'GET': 
+    if rq.method == 'GET' and rq.args.get('params') == "all_plants":
         my_plants.update_plants()
         try:
-            pass
-            chat_id = rq.args.get('chat_id')
+            # chat_id = rq.args.get('chat_id')
+            chat_id = user
             my_plants.create_user_if_not_exist(chat_id)
             list = my_plants.get_plants_json(chat_id)
         except:
@@ -84,12 +86,28 @@ def plants():
             abort(500)
         return str(list)
 
+    #### Get last id
+    elif rq.method == 'GET' and rq.args.get('params') == "last_id":
+        my_plants.update_plants()
+        try:
+            chat_id = user
+            my_plants.create_user_if_not_exist(chat_id)
+            if not bool(my_plants.plants[chat_id]["plants"]): return str(0)
+            last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
+        except KeyError:
+            print ("error 500: invalid id.")
+            abort(500)
+        except:
+            print ("error 500: Something went wrong with getting last id.")
+            abort(500)
+        return str(last_plant_id)
+
     #### Add plants 
     elif rq.method == 'POST':
          my_plants.update_plants()
-    print("attempting to add a new plant!")
+    print("Attempting to add a new plant...")
     try:
-        chat_id = rq.args.get('chat_id')
+        chat_id = user
         my_plants.create_user_if_not_exist(chat_id)
         my_plants.get_plants_json(chat_id)
     except KeyError:
@@ -119,54 +137,89 @@ def plants():
     return "True"
 
 
-@app.route(my_plants.conf['data_base']['functions']['get_last_id_url'], methods=['GET'])
-def get_last_id():
+@app.route(my_plants.conf['data_base']['endpoints']['plant_id_of_user_id'], methods=['GET','PUT','DELETE'])
+def one_plant(url_user,url_plant):
+    
     my_plants.update_plants()
-    try:
-        chat_id = rq.args.get('chat_id')
-        my_plants.create_user_if_not_exist(chat_id)
-        if not bool(my_plants.plants[chat_id]["plants"]): return str(0)
-        last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
-    except KeyError:
-        print ("error 500: invalid id.")
-        abort(500)
-    except:
-        print ("error 500: Something went wrong with getting last id.")
-        abort(500)
-    return str(last_plant_id)
+    all_plants = my_plants.plants
+    chat_id = url_user
+    plant_id = url_plant
 
+    # get a plant by id
+    if rq.method == 'GET':
+        for plant in all_plants:
+            if plant['id'] == plant_id:
+                return str(plant)
+        print("The plant id was not found")
+        abort(404)
+                    
+    # deleting a plant
+    elif rq.method == 'DELETE':
+        try:
+            # chat_id = rq.args.get('chat_id')
+            # plant_id = rq.args.get('plant_id')
+            with open('plants.json', 'r+') as f:
+                all_plants = json.load(f)
+                list = all_plants[chat_id]["plants"]
+                success = False
+                for count, dict in enumerate(list):
+                    if dict['id'] == url_plant:
+                        del all_plants[chat_id]["plants"][count]
+                        success = True
+                        break
+                f.seek(0)
+                json.dump(all_plants, f, indent=4)
+                f.truncate()     # remove remaining part
+            if not success: 
+                print("Could not delete that plant from that user.")
+                abort(404)
+        except:
+            print("Something went wrong with deleting a plant")
+            abort(500)
+        return "True"
+    elif rq.method == 'PUT':
+        try:
+            new_plant = rq.json
+            new_plant_id = new_plant['id']
+            if url_plant != new_plant_id:
+                print("Error: inconsisten plant_id")
+                abort(400)
+        except:
+            print('The new plant does not have an id or is not a json')
+            abort(400)
 
-@app.route(my_plants.conf['data_base']['functions']['delete_plant_url'], methods=['DELETE'])
-def delete_plant():
-    try:
-        chat_id = rq.args.get('chat_id')
-        plant_id = rq.args.get('plant_id')
-        with open('plants.json', 'r+') as f:
-            all_plants = json.load(f)
-            list = all_plants[chat_id]["plants"]
-            success = False
-            for count, dict in enumerate(list):
-                if dict['id'] == plant_id:
-                    del all_plants[chat_id]["plants"][count]
-                    success = True
+        replace_plant_index = -1
+
+        try:
+            # find plant index 
+            for count, plant in enumerate(all_plants):
+                if plant['id'] == url_plant:
+                    replace_plant_index = count
                     break
-            f.seek(0)
-            json.dump(all_plants, f, indent=4)
-            f.truncate()     # remove remaining part
-        if not success: 
-            print("Could not delete that plant from that user.")
-            abort(404)
-    except:
-        print("Something went wrong with deleting a plant")
-        abort(500)
-    return "True"
+            # replace plant
+            if (new_plant is dict or type(new_plant)== dict) and replace_plant_index >= 0:
+                with open('plants.json', 'r+') as f:
+                    all_plants[chat_id]["plants"][replace_plant_index] = new_plant
+                    f.seek(0)
+                    json.dump(all_plants, f, indent=4)
+                    f.truncate()
+            else:
+                print("The new plant is not a json or there was an issue with the index")
+                abort(500)
+        except:
+            print("Something went wrong with updating a plant.")
+            abort(500)
 
-@app.route(my_plants.conf['data_base']['functions']['water_plant_url'], methods=['POST'])
+@app.route(my_plants.conf['data_base']['endpoints']['plant_id_of_user_id'], methods=['PUT'])
 def log_watering():
     pass
 
-@app.route("/users/<user>/plant", methods=['GET'])
-def Test(user):
+@app.route("/users/<user>/plant/<plant>", methods=['GET'])
+def Test(user,plant):
+    return f'User {escape(user)} and {escape(plant)}'
+
+@app.route("/users/<user>", methods=['GET'])
+def Test_2(user):
     return f'User {escape(user)}'
 
 
