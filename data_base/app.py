@@ -72,13 +72,13 @@ db_port = my_plants.db_server[1]
 print(db_host + db_port)
 
 @app.route(my_plants.conf['data_base']['endpoints']['all_plants_of_user_id'], methods=['GET', 'POST'])
-def plants(user):
+def plants(user_id):
     #### List plants 
     if rq.method == 'GET' and rq.args.get('params') == "all_plants":
         my_plants.update_plants()
         try:
             # chat_id = rq.args.get('chat_id')
-            chat_id = user
+            chat_id = user_id
             my_plants.create_user_if_not_exist(chat_id)
             list = my_plants.get_plants_json(chat_id)
         except:
@@ -90,7 +90,7 @@ def plants(user):
     elif rq.method == 'GET' and rq.args.get('params') == "last_id":
         my_plants.update_plants()
         try:
-            chat_id = user
+            chat_id = user_id
             my_plants.create_user_if_not_exist(chat_id)
             if not bool(my_plants.plants[chat_id]["plants"]): return str(0)
             last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
@@ -107,7 +107,7 @@ def plants(user):
          my_plants.update_plants()
     print("Attempting to add a new plant...")
     try:
-        chat_id = user
+        chat_id = user_id
         my_plants.create_user_if_not_exist(chat_id)
         my_plants.get_plants_json(chat_id)
     except KeyError:
@@ -138,12 +138,10 @@ def plants(user):
 
 
 @app.route(my_plants.conf['data_base']['endpoints']['plant_id_of_user_id'], methods=['GET','PUT','DELETE'])
-def one_plant(url_user,url_plant):
+def one_plant(user_id,plant_id):
     
     my_plants.update_plants()
     all_plants = my_plants.plants
-    chat_id = url_user
-    plant_id = url_plant
 
     # get a plant by id
     if rq.method == 'GET':
@@ -156,15 +154,13 @@ def one_plant(url_user,url_plant):
     # deleting a plant
     elif rq.method == 'DELETE':
         try:
-            # chat_id = rq.args.get('chat_id')
-            # plant_id = rq.args.get('plant_id')
             with open('plants.json', 'r+') as f:
                 all_plants = json.load(f)
-                list = all_plants[chat_id]["plants"]
+                list = all_plants[user_id]["plants"]
                 success = False
                 for count, dict in enumerate(list):
-                    if dict['id'] == url_plant:
-                        del all_plants[chat_id]["plants"][count]
+                    if dict['id'] == plant_id:
+                        del all_plants[user_id]["plants"][count]
                         success = True
                         break
                 f.seek(0)
@@ -181,7 +177,7 @@ def one_plant(url_user,url_plant):
         try:
             new_plant = rq.json
             new_plant_id = new_plant['id']
-            if url_plant != new_plant_id:
+            if plant_id != new_plant_id:
                 print("Error: inconsisten plant_id")
                 abort(400)
         except:
@@ -193,13 +189,13 @@ def one_plant(url_user,url_plant):
         try:
             # find plant index 
             for count, plant in enumerate(all_plants):
-                if plant['id'] == url_plant:
+                if plant['id'] == plant_id:
                     replace_plant_index = count
                     break
             # replace plant
             if (new_plant is dict or type(new_plant)== dict) and replace_plant_index >= 0:
                 with open('plants.json', 'r+') as f:
-                    all_plants[chat_id]["plants"][replace_plant_index] = new_plant
+                    all_plants[user_id]["plants"][replace_plant_index] = new_plant
                     f.seek(0)
                     json.dump(all_plants, f, indent=4)
                     f.truncate()
@@ -210,21 +206,17 @@ def one_plant(url_user,url_plant):
             print("Something went wrong with updating a plant.")
             abort(500)
 
-@app.route(my_plants.conf['data_base']['endpoints']['plant_id_of_user_id'], methods=['PUT'])
-def log_watering():
-    pass
+# @app.route(my_plants.conf['data_base']['endpoints']['plant_id_of_user_id'], methods=['PUT'])
+# def log_watering():
+#     pass
 
-@app.route("/users/<user>/plant/<plant>", methods=['GET'])
-def Test(user,plant):
-    return f'User {escape(user)} and {escape(plant)}'
+# @app.route("/users/<user>/plant/<plant>", methods=['GET'])
+# def Test(user,plant):
+#     return f'User {escape(user)} and {escape(plant)}'
 
-@app.route("/users/<user>", methods=['GET'])
-def Test_2(user):
-    return f'User {escape(user)}'
-
-
-
-
+# @app.route("/users/<user>", methods=['GET'])
+# def Test_2(user):
+#     return f'User {escape(user)}'
 
 if __name__ == '__main__':
     app.run(host=db_host, port=db_port)

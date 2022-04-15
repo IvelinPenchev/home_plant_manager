@@ -50,17 +50,20 @@ class TelegramBot:
             # get necessary data before updating the configuration file
             self.conf = json.load(open("config.json"))
             self.update_conf_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["get_config_url"]
-            self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
-            self.update_conf()       
+            self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]    
         except: 
+            print("Initialisation error: could not open config.")
+        try:
+            self.update_conf() 
+        except:
             print("Initialisation error: Could not update config.")
+
         try:
             # extract data from the config
             self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
-            self.list_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_plant_list_url"]
-            self.get_last_id_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["get_last_id_url"]
-            self.add_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["add_plant_url"]
-            self.delete_plant_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['functions']["delete_plant_url"]
+            self.all_plants_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['endpoints']["all_plants_of_user_id"]
+            self.one_plant_url = self.conf['data_base']["db_url"] + ":" + self.conf['data_base']["port"] + self.conf['data_base']['endpoints']["plant_id_of_user_id"]
+
             self.plant_keys = self.conf['data_base']['functions']['plant_info_from_user']
             self.extra_plant_data = self.conf['data_base']['functions']['plant_info_auto']
             self.server_down_msg = "Our server is down. Please try again later. We apologize for the inconvenience!"
@@ -116,19 +119,23 @@ class TelegramBot:
 
             # if the user has added all the reqired plant info, then proceed to sending the plant info to the DB
             if len(context.user_data['add_plant_info']) >= len(self.plant_keys):
-                chatid = update.message.chat.id 
-                id = str(int(self.rest_get_last_id(chatid)) + 1)
-                keys = self.plant_keys[:] # [:] is needed so a copy is created without linking
-                keys.insert(0, "id")
-                values = context.user_data["add_plant_info"][:] # [:] is needed so a copy is created without linking
-                values.insert(0, id)
-                json_plant = self.create_json(keys, values)
-                json_plant = self.add_auto_data_to_dict(json_plant) # add the default data, such as "watered: []"
-                
-                # posting the plant to the DB
-                if self.rest_post_json(self.add_plants_url, json_plant, {"chat_id":chatid}):
-                    msg = "That plant is now added: \n" + self.beautify_json(json_plant)
-                else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
+                chatid = update.message.chat.id
+                [id, success] = self.rest_get_last_id(chatid)
+                if success:
+                    id = str(int(id)+1)
+                    keys = self.plant_keys[:] # [:] is needed so a copy is created without linking
+                    keys.insert(0, "id")
+                    values = context.user_data["add_plant_info"][:] # [:] is needed so a copy is created without linking
+                    values.insert(0, id)
+                    json_plant = self.create_json(keys, values)
+                    json_plant = self.add_auto_data_to_dict(json_plant) # add the default data, such as "watered: []"
+                    
+                    # posting the plant to the DB
+                    if self.rest_post_plant(json_plant, chatid):
+                        msg = "That plant is now added: \n" + self.beautify_json(json_plant)
+                    else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
+                else: 
+                    msg = "Something went wrong with getting to the database."
                 
                 update.message.reply_text(msg, reply_markup= self.markup_menu)
                 
@@ -340,25 +347,27 @@ class TelegramBot:
 
     # send a "get" request to get all plants of a user
     def rest_get_plant_list(self, chat_id):
-            r = requests.get(self.list_plants_url + "?chat_id=" + str(chat_id))
-            plant_list = []
-            success = False
-            if r.ok:    
-                success = True
-                r = r.text
-                plant_list = list(ast.literal_eval(r)) # convert string to list of dictionaries
-            else:
-                print("Getting the plant list resulted in some error")
-            return [plant_list, success] 
+        success = False
+        plant_list = []
+        url = self.set_correct_url(self.all_plants_url, [chat_id])
+        r = requests.get(url + "?params=all_plants")
+        if r.ok and str(chat_id) in url:    
+            success = True
+            r = r.text
+            plant_list = list(ast.literal_eval(r)) # convert string to list of dictionaries
+        else:
+            print("Getting the plant list resulted in some error")
+        return [plant_list, success] 
 
     # send a "post" request to a url, where querry is chat_id and payload is a json_string
-    def rest_post_json(self, url, json_string, params_dict):
+    def rest_post_plant(self, json_string, chat_id):
         try:
-            query = "?"
-            for key in params_dict:
-                if len(query) > 1:  query+= "&"
-                query += str(key) + "=" + str(params_dict[key]) 
-            r = requests.post(url + query, json = json_string)
+        #     query = "?"
+        #     for key in params_dict:
+        #         if len(query) > 1:  query+= "&"
+        #         query += str(key) + "=" + str(params_dict[key])
+            url = self.set_correct_url(self.all_plants_url, [chat_id])
+            r = requests.post(url, json = json_string)
             if r.ok: return True
             else:
                 print("Error: Posting data to server ended up in an error") 
@@ -371,14 +380,36 @@ class TelegramBot:
 
     # send a get request for getting the last used plant id for a user
     def rest_get_last_id(self,chat_id):
-        return requests.get(self.get_last_id_url + "?chat_id=" + str(chat_id)).text
+        success = False
+        url = self.set_correct_url(self.all_plants_url, [chat_id])
+        r = requests.get(url + "?params=last_id")
+
+        if r.ok and str(chat_id) in url:    
+            success = True
+            r = r.text
+        else:
+            print("Getting the plant list resulted in some error")
+        return [r, success] 
 
     # send a "delete" request for deleting plant by plant_id and chat_id
     def rest_delete_plant(self, chat_id, plant_id):
-        return requests.delete(self.delete_plant_url + "?chat_id=" + str(chat_id) + "&plant_id=" + str(plant_id))
+        url = self.set_correct_url(self.one_plant_url, [chat_id, plant_id])
+        return requests.delete(url)
     
     
     ###################### AUXILIARY METHODS ####################
+
+    # replaces <user_id> and <plant_id> from the url with the correct values
+    def set_correct_url(self, url, list_of_vars):
+        res = str(url)
+        for var in list_of_vars:
+            start = res.find("<")
+            end = res.find(">")+1
+            if start != -1 and end != -1:
+                res = res.replace(res[start:end], str(var))
+            else:
+                print("Warning: in set_correct_url, expected more '<' or '>' in base url")
+        return res
 
     # takes a dictionary and makes in representable form for the user
     def beautify_json(self,plant_dict_string):
