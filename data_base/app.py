@@ -74,7 +74,7 @@ print(db_host + db_port)
 @app.route(my_plants.conf['data_base']['endpoints']['all_plants_of_user_id'], methods=['GET', 'POST'])
 def plants(user_id):
     #### List plants 
-    if rq.method == 'GET' and rq.args.get('params') == "all_plants":
+    if rq.method == 'GET':
         my_plants.update_plants()
         try:
             # chat_id = rq.args.get('chat_id')
@@ -85,22 +85,6 @@ def plants(user_id):
             print("error 500: Something went wrong with listing plants.")
             abort(500)
         return str(list)
-
-    #### Get last id
-    elif rq.method == 'GET' and rq.args.get('params') == "last_id":
-        my_plants.update_plants()
-        try:
-            chat_id = user_id
-            my_plants.create_user_if_not_exist(chat_id)
-            if not bool(my_plants.plants[chat_id]["plants"]): return str(0)
-            last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
-        except KeyError:
-            print ("error 500: invalid id.")
-            abort(500)
-        except:
-            print ("error 500: Something went wrong with getting last id.")
-            abort(500)
-        return str(last_plant_id)
 
     #### Add plants 
     elif rq.method == 'POST':
@@ -122,6 +106,15 @@ def plants(user_id):
     except:
         print("error 500: Something went wrong with the json while adding plants.")
         abort(500)
+
+    try:
+        if not bool(my_plants.plants[chat_id]["plants"]): return str(0)
+        last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
+        plant['id'] = last_plant_id + 1
+    except:
+        print("error 500: Could not assign an id to plant.")
+        abort(500)
+
     if plant is dict or type(plant)== dict:
         with open('plants.json', 'r+') as f:
             all_plants = json.load(f)
@@ -146,7 +139,7 @@ def one_plant(user_id,plant_id):
     # get a plant by id
     if rq.method == 'GET':
         for plant in all_plants:
-            if plant['id'] == plant_id:
+            if str(plant['id']) == str(plant_id):
                 return str(plant)
         print("The plant id was not found")
         abort(404)
@@ -173,6 +166,7 @@ def one_plant(user_id,plant_id):
             print("Something went wrong with deleting a plant")
             abort(500)
         return "True"
+
     elif rq.method == 'PUT':
         try:
             new_plant = rq.json

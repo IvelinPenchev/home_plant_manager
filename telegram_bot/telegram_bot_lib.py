@@ -120,22 +120,19 @@ class TelegramBot:
             # if the user has added all the reqired plant info, then proceed to sending the plant info to the DB
             if len(context.user_data['add_plant_info']) >= len(self.plant_keys):
                 chatid = update.message.chat.id
-                [id, success] = self.rest_get_last_id(chatid)
-                if success:
-                    id = str(int(id)+1)
-                    keys = self.plant_keys[:] # [:] is needed so a copy is created without linking
-                    keys.insert(0, "id")
-                    values = context.user_data["add_plant_info"][:] # [:] is needed so a copy is created without linking
-                    values.insert(0, id)
-                    json_plant = self.create_json(keys, values)
-                    json_plant = self.add_auto_data_to_dict(json_plant) # add the default data, such as "watered: []"
-                    
-                    # posting the plant to the DB
-                    if self.rest_post_plant(json_plant, chatid):
-                        msg = "That plant is now added: \n" + self.beautify_json(json_plant)
-                    else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
-                else: 
-                    msg = "Something went wrong with getting to the database."
+                # [id, success] = self.rest_get_last_id(chatid)
+                # id = str(int(id)+1)
+                keys = self.plant_keys[:] # [:] is needed so a copy is created without linking
+                # keys.insert(0, "id")
+                values = context.user_data["add_plant_info"][:] # [:] is needed so a copy is created without linking
+                # values.insert(0, id)
+                json_plant = self.create_json(keys, values)
+                json_plant = self.add_auto_data_to_dict(json_plant) # add the default data, such as "watered: []"
+                
+                # posting the plant to the DB
+                if self.rest_post_plant(json_plant, chatid):
+                    msg = "That plant is now added: \n" + self.beautify_json(json_plant)
+                else: msg = "Something went wrong with adding plant: \n" + self.beautify_json(json_plant)
                 
                 update.message.reply_text(msg, reply_markup= self.markup_menu)
                 
@@ -172,7 +169,46 @@ class TelegramBot:
         ### WATERING PLANTS
         # If the date of the watering is known already
         elif category == "water":
-            pass
+            plants_ids_str = text.replace(" ", "")
+            plant_ids_list = plants_ids_str.split(",")
+            watered_plants = []
+            try:
+                for plant_id in plant_ids_list:
+                    r = self.get_plant(update.message.chat.id, str(int(plant_id)))
+                    if r.ok:
+                        watered_plants.append(json.loads(r.text))
+                    else:
+                        update.message.reply_text("Could not get plant with Plant_id" + str(plant_id) + ". Try again later.", self.markup_menu)
+                        return self.CHOOSING
+
+            except ValueError:
+                update.message.reply_text("Input was not numbers, separated by commas. Enter the watered plant IDs, separated by comma ',' for example: 1,5,8")
+                context.user_data['category'] = "water"
+                return self.TYPING_REPLY
+            except:
+                print("Something went wrong with watering a plant. Try again later.")
+                update.message.reply_text("Something went wrong with watering plants. Try again later.", self.markup_menu)
+                return self.CHOOSING
+
+
+            try:
+                # watered_plants is now a list of dictionaries with plants. 
+                water_date = context.user_data['date']
+                
+                for plant in watered_plants:
+                    temp_plant = plant
+                    temp_plant['watered'] = temp_plant['watered'].append(water_date)                
+                    r = self.put_plant(update.message.chat.id, temp_plant['id'], json.loads(temp_plant))
+                    if not r.ok:
+                        update.message.reply_text("Could not update watering, Try again later.", self.markup_menu)
+                        return self.CHOOSING
+            except:
+                update.message.reply_text("Something went wrong. Could not update plant watering", self.markup_menu)
+                return self.CHOOSING
+                
+            update.message.reply_text("Plant watering complete!", self.markup_menu)
+            return self.CHOOSING
+
         # If the watering date was in the past, and needs to be saved
         elif category == "water past":
             format = "%d/%m/%Y"
@@ -180,7 +216,7 @@ class TelegramBot:
                 datetime.strptime(text, format)
             except ValueError:
                 # if format is incorrect, let user try again.
-                print("Incorrect date format. Enter in format dd/mm/yyyy, for example 22.02.2022")
+                update.message.reply_text("Incorrect date format. Enter watering date in format dd/mm/yyyy, for example 22.02.2022")
                 context.user_data['category'] = "water past"
                 return  self.TYPING_REPLY   
 
@@ -350,7 +386,7 @@ class TelegramBot:
         success = False
         plant_list = []
         url = self.set_correct_url(self.all_plants_url, [chat_id])
-        r = requests.get(url + "?params=all_plants")
+        r = requests.get(url)
         if r.ok and str(chat_id) in url:    
             success = True
             r = r.text
@@ -378,24 +414,18 @@ class TelegramBot:
             print("json is: " + str(json_string))
             return False
 
-    # send a get request for getting the last used plant id for a user
-    def rest_get_last_id(self,chat_id):
-        success = False
-        url = self.set_correct_url(self.all_plants_url, [chat_id])
-        r = requests.get(url + "?params=last_id")
-
-        if r.ok and str(chat_id) in url:    
-            success = True
-            r = r.text
-        else:
-            print("Getting the plant list resulted in some error")
-        return [r, success] 
-
     # send a "delete" request for deleting plant by plant_id and chat_id
     def rest_delete_plant(self, chat_id, plant_id):
         url = self.set_correct_url(self.one_plant_url, [chat_id, plant_id])
         return requests.delete(url)
+
+    def get_plant(self, chat_id, plant_id):
+        url = self.set_correct_url(self.one_plant_url, [chat_id, plant_id])
+        return requests.get(url)
     
+    def put_plant(self, chat_id, plant_id, json_string):
+        url = self.set_correct_url(self.one_plant_url, [chat_id, plant_id])
+        return requests.get(url, json = json_string)
     
     ###################### AUXILIARY METHODS ####################
 

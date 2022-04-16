@@ -25,13 +25,6 @@
                 "plant nickname": "Kalirozata",
                 "room": "Living room",
                 "watered": []
-            },
-            {
-                "id": "3",
-                "plant species": "Calanthea",
-                "plant nickname": "Prayer",
-                "room": "Living room",
-                "watered": []
             }
         ]
     }
