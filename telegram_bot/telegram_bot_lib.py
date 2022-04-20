@@ -173,13 +173,11 @@ class TelegramBot:
             watered_plants = []
             try:
                 for plant_id in plant_ids_list:
-                    print(plant_id)
-                    print(type(plant_id))
                     r = self.get_plant(update.message.chat.id, str(int(plant_id)))
                     if r.ok:
-                        watered_plants.append(json.loads(r.text))
+                        watered_plants.append(r.text)
                     else:
-                        update.message.reply_text("Could not get plant with Plant_id" + str(plant_id) + ". Try again later.", self.markup_menu)
+                        update.message.reply_text("Could not get plant with Plant_id" + str(plant_id) + ". Try again later.", reply_markup= self.markup_menu)
                         return self.CHOOSING
 
             except ValueError:
@@ -188,7 +186,7 @@ class TelegramBot:
                 return self.TYPING_REPLY
             except:
                 print("Something went wrong with watering a plant. Try again later.")
-                update.message.reply_text("Something went wrong with watering plants. Try again later.", self.markup_menu)
+                update.message.reply_text("Something went wrong with watering plants. Try again later.", reply_markup= self.markup_menu)
                 return self.CHOOSING
 
 
@@ -197,18 +195,22 @@ class TelegramBot:
                 water_date = context.user_data['date']
                 
                 for plant in watered_plants:
-                    temp_plant = plant
-                    temp_plant['watered'] = temp_plant['watered'].append(water_date)                
-                    r = self.put_plant(update.message.chat.id, temp_plant['id'], json.loads(temp_plant))
-                    if not r.ok:
-                        update.message.reply_text("Could not update watering, Try again later.", self.markup_menu)
-                        return self.CHOOSING
+                    temp_plant = ast.literal_eval(plant)
+                    if str(water_date) not in temp_plant['watered']:
+                        temp_plant['watered'].append(str(water_date))            
+                        r = self.put_plant(update.message.chat.id, temp_plant['id'], json.dumps(temp_plant))
+                        if not r.ok:
+                            update.message.reply_text("Could not update watering, Try again later.", reply_markup= self.markup_menu)
+                            return self.CHOOSING
+                    else:
+                        update.message.reply_text("You already logged that watering for plant " + str(temp_plant['id']))
             except:
-                update.message.reply_text("Something went wrong. Could not update plant watering", self.markup_menu)
+                update.message.reply_text("Something went wrong. Could not update plant watering", reply_markup= self.markup_menu)
                 return self.CHOOSING
-                
-            update.message.reply_text("Plant watering complete!", self.markup_menu)
+            
+            update.message.reply_text("Plant watering complete!", reply_markup= self.markup_menu)
             return self.CHOOSING
+
 
         # If the watering date was in the past, and needs to be saved
         elif category == "water past":
@@ -217,7 +219,7 @@ class TelegramBot:
                 datetime.strptime(text, format)
             except ValueError:
                 # if format is incorrect, let user try again.
-                update.message.reply_text("Incorrect date format. Enter watering date in format dd/mm/yyyy, for example 22.02.2022")
+                update.message.reply_text("Incorrect date format. Enter watering date in format dd/mm/yyyy, for example 22/02/2022")
                 context.user_data['category'] = "water past"
                 return  self.TYPING_REPLY   
 
@@ -259,7 +261,7 @@ class TelegramBot:
     def watered_past(self, update: Update, context: CallbackContext) -> int:
         if  self.is_server_connection():
             update.message.reply_text(
-            "When did you water your plants? Enter in format dd/mm/yyyy, for example 22.02.2022")
+            "When did you water your plants? Enter in format dd/mm/yyyy, for example 22/02/2022")
             context.user_data['category'] = "water past"
             return  self.TYPING_REPLY
         else:

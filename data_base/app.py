@@ -115,7 +115,7 @@ def plants(user_id):
         print("error 500: Could not assign an id to plant.")
         abort(500)
 
-    if plant is dict or type(plant)== dict:
+    if type(plant)== dict:
         with open('plants.json', 'r+') as f:
             all_plants = json.load(f)
             all_plants[chat_id]["plants"].append(plant)
@@ -149,16 +149,16 @@ def one_plant(user_id,plant_id):
     elif rq.method == 'DELETE':
         try:
             with open('plants.json', 'r+') as f:
-                all_plants = json.load(f)
-                list = all_plants[user_id]["plants"]
+                all_plants_f = json.load(f)
+                list = all_plants_f[user_id]["plants"]
                 success = False
-                for count, dict in enumerate(list):
-                    if dict['id'] == plant_id:
-                        del all_plants[user_id]["plants"][count]
+                for count, dictionary in enumerate(list):
+                    if dictionary['id'] == plant_id:
+                        del all_plants_f[user_id]["plants"][count]
                         success = True
                         break
                 f.seek(0)
-                json.dump(all_plants, f, indent=4)
+                json.dump(all_plants_f, f, indent=4)
                 f.truncate()     # remove remaining part
             if not success: 
                 print("Could not delete that plant from that user.")
@@ -170,7 +170,7 @@ def one_plant(user_id,plant_id):
 
     elif rq.method == 'PUT':
         try:
-            new_plant = rq.json
+            new_plant = json.loads(rq.json)
             new_plant_id = new_plant['id']
             if plant_id != new_plant_id:
                 print("Error: inconsisten plant_id")
@@ -182,18 +182,20 @@ def one_plant(user_id,plant_id):
         replace_plant_index = -1
 
         try:
-            # find plant index 
+        # find plant index
             for count, plant in enumerate(all_plants):
                 if plant['id'] == plant_id:
                     replace_plant_index = count
                     break
             # replace plant
-            if (new_plant is dict or type(new_plant)== dict) and replace_plant_index >= 0:
+            if type(new_plant) is dict and replace_plant_index >= 0:
                 with open('plants.json', 'r+') as f:
-                    all_plants[user_id]["plants"][replace_plant_index] = new_plant
+                    all_plants_f = json.load(f)
+                    all_plants_f[user_id]["plants"][replace_plant_index] = new_plant
                     f.seek(0)
-                    json.dump(all_plants, f, indent=4)
+                    json.dump(all_plants_f, f, indent=4)
                     f.truncate()
+                return "True"
             else:
                 print("The new plant is not a json or there was an issue with the index")
                 abort(500)
