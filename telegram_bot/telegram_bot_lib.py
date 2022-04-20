@@ -139,7 +139,6 @@ class TelegramBot:
                 # task is done, so clear all the used temp data
                 del context.user_data['category']
                 del context.user_data['add_plant_info']
-
                 return self.CHOOSING # go back to main menu
 
             # if the user hasn't added all the info yet, proceed to asking for more data
@@ -174,6 +173,8 @@ class TelegramBot:
             watered_plants = []
             try:
                 for plant_id in plant_ids_list:
+                    print(plant_id)
+                    print(type(plant_id))
                     r = self.get_plant(update.message.chat.id, str(int(plant_id)))
                     if r.ok:
                         watered_plants.append(json.loads(r.text))
@@ -425,7 +426,7 @@ class TelegramBot:
     
     def put_plant(self, chat_id, plant_id, json_string):
         url = self.set_correct_url(self.one_plant_url, [chat_id, plant_id])
-        return requests.get(url, json = json_string)
+        return requests.put(url, json = json_string)
     
     ###################### AUXILIARY METHODS ####################
 
