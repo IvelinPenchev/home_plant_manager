@@ -204,7 +204,7 @@ def one_plant(user_id,plant_id):
                     break
             # replace plant
             if type(new_plant) is dict and replace_plant_index >= 0:
-                my_plants.update_plant_db(replace_plant_index, user_id)
+                my_plants.replace_plant_db(replace_plant_index, user_id)
                 return "True"
             else:
                 print("The new plant is not a json or there was an issue with the index")
