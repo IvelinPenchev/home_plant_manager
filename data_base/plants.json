@@ -13,32 +13,11 @@
     "5241737145": {
         "plants": [
             {
-                "id": "2",
-                "plant species": "Rose",
-                "plant nickname": "Kalirozata",
-                "room": "Living room",
-                "watered": [
-                    "20/04/2022",
-                    "22/02/2022"
-                ]
-            },
-            {
-                "plant species": "Drazena",
-                "plant nickname": "Palamata",
-                "room": "Living room",
-                "watered": [
-                    "20/04/2022"
-                ],
-                "id": "3"
-            },
-            {
-                "plant species": "Pothos",
-                "plant nickname": "Kalipotosa",
-                "room": "Bedroom",
-                "watered": [
-                    "22/02/2022"
-                ],
-                "id": "4"
+                "plant species": "H",
+                "plant nickname": "F",
+                "room": "B",
+                "watered": [],
+                "id": "1"
             }
         ]
     }

@@ -108,8 +108,10 @@ def plants(user_id):
         abort(500)
 
     try:
-        if not bool(my_plants.plants[chat_id]["plants"]): last_plant_id = "0"
-        last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
+        if not bool(my_plants.plants[chat_id]["plants"]):
+            last_plant_id = "0"
+        else:
+            last_plant_id = my_plants.plants[chat_id]["plants"][-1]['id']
         plant['id'] = str(int(last_plant_id) + 1)
     except:
         print("error 500: Could not assign an id to plant.")

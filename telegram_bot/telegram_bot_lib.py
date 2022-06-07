@@ -177,7 +177,7 @@ class TelegramBot:
                     if r.ok:
                         watered_plants.append(r.text)
                     else:
-                        update.message.reply_text("Could not get plant with Plant_id" + str(plant_id) + ". Try again later.", reply_markup= self.markup_menu)
+                        update.message.reply_text("Could not get plant with Plant_id " + str(plant_id) + ". Try again later.", reply_markup= self.markup_menu)
                         return self.CHOOSING
 
             except ValueError:
