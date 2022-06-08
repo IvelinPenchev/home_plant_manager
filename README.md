@@ -54,6 +54,10 @@ Starting menu
 
 <img src="./pics/telegram_2.jpeg" alt="drawing" width="300"/>
 
+Result of "Add plant" and user specified plant species, plant nickname, location of plant
+
+<img src="./pics/telegram_5.jpg" alt="drawing" width="300"/>
+
 Result of "List plants"
 
 <img src="./pics/telegram_3.jpg" alt="drawing" width="300"/>
