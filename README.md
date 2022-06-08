@@ -44,10 +44,17 @@ The current available functionalities are:
 
 The following pictures present parts of the user interface.
 
+Starting menu
+<img src="./pics/telegram_1.jpeg" alt="drawing" width="300"/>
 
-<img src="./pics/telegram_1.jpeg" alt="drawing" width="300"/> <img src="./pics/telegram_2.jpeg" alt="drawing" width="300"/>
+"Your plants" menu
+<img src="./pics/telegram_2.jpeg" alt="drawing" width="300"/>
 
-<img src="./pics/telegram_3.jpg" alt="drawing" width="300"/> <img src="./pics/telegram_4.jpeg" alt="drawing" width="300"/>
+Result of "List plants"
+<img src="./pics/telegram_3.jpg" alt="drawing" width="300"/>
+
+"Log watering" menu
+<img src="./pics/telegram_4.jpeg" alt="drawing" width="300"/>
 
 
 
