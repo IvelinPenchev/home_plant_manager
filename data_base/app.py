@@ -13,14 +13,15 @@ class myPlants:
 
         try:
             self.conf = json.load(open("config.json"))
+            self.cred = json.load(open("db_credentials.json"))
             self.update_conf_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["get_config_url"]
             self.update_conf()
             self.is_connection_url = self.conf['catalogue']["server_url"] + ":" + self.conf['catalogue']["port"] + self.conf['catalogue']["test_connection_url"]
             self.server_down_msg = "Our server is down. Please try again later. We apologize for the inconvenience!"
             self.db_server = [self.conf['data_base']["db_url"],self.conf['data_base']["port"]]       
-            self.mongodb_user = self.conf['data_base']["mongodb_user"]       
-            self.mongodb_pass = self.conf['data_base']["mongodb_pass"]
-            self.mongodb_db_name = self.conf['data_base']["mongodb_db_name"]
+            self.mongodb_user = self.cred["mongodb_user"]       
+            self.mongodb_pass = self.cred["mongodb_pass"]
+            self.mongodb_db_name = self.cred["mongodb_db_name"]
         except: 
             print("Initialisation error: Could not read from config.")
 
@@ -64,7 +65,6 @@ class myPlants:
         mycol = self.db[user_id]
         mydoc = mycol.find(myquery,{ "_id": 0 })
         for x in mydoc:
-            print(x)
             return x
 
     def insert_plant_db(self, user_id, plant_dict):
@@ -112,7 +112,7 @@ def plants(user_id):
         try:
             chat_id = user_id
             plant_list = my_plants.get_user_plants_json(chat_id)
-            print(plant_list)
+            # print(plant_list)
         except:
             print("error 500: Something went wrong with listing plants.")
             abort(500)
@@ -142,7 +142,6 @@ def plants(user_id):
                 last_plant_id = "0"
             else:
                 last_plant_id = my_plants.get_user_plants_json(chat_id)[-1]['id']
-            print(last_plant_id)
             plant['id'] = str(int(last_plant_id) + 1)
         except:
             print("error 500: Could not assign an id to plant.")
