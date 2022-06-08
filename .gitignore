@@ -1,2 +1,4 @@
 catalogue_server/config.json
 telegram_bot/token.json
+data_base/config.json
+telegram_bot/config.json
