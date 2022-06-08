@@ -45,10 +45,10 @@ The current available functionalities are:
 The following pictures present parts of the user interface.
 
 
-<img src="./pics/telegram_1.png" alt="drawing" width="200"/>
-<img src="./pics/telegram_2.png" alt="drawing" width="200"/>
-<img src="./pics/telegram_3.png" alt="drawing" width="200"/>
-<img src="./pics/telegram_4.png" alt="drawing" width="200"/>
+<img src="./pics/telegram_1.jpeg" alt="drawing" width="200"/>
+<img src="./pics/telegram_2.jpeg" alt="drawing" width="200"/>
+<img src="./pics/telegram_3.jpeg" alt="drawing" width="200"/>
+<img src="./pics/telegram_4.jpeg" alt="drawing" width="200"/>
 
 
 
