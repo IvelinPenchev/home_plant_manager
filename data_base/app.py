@@ -81,9 +81,9 @@ class myPlants:
         try:
             myquery = { "id": replace_plant_index }
             mycol = self.db[user_id]
-            mycol.replaceOne(myquery, plant_dict)
+            mycol.replace_one(myquery, plant_dict)
         except:
-            print("error 500: Something went wrong with inserting a plant.")
+            print("error 500: Something went wrong with replacing a plant.")
             abort(500)
         return True
 
@@ -204,7 +204,7 @@ def one_plant(user_id,plant_id):
                     break
             # replace plant
             if type(new_plant) is dict and replace_plant_index >= 0:
-                my_plants.replace_plant_db(replace_plant_index, user_id)
+                my_plants.replace_plant_db(replace_plant_index, user_id,new_plant)
                 return "True"
             else:
                 print("The new plant is not a json or there was an issue with the index")
