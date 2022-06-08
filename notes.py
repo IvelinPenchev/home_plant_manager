@@ -2,8 +2,8 @@
 #   python3 -m venv .venv
 # To activate new environment type:
 #   source .venv/bin/activate   (MAC)
-#   cd .venv/Scripts (WINDOWS - remember running in cmd and NOT powershell)
-#   activate (WINDOWS - remember running in cmd and NOT powershell)
+#   cd .venv/Scripts (WINDOWS - remember running in cmd and NOT powershell) 
+#   activate (WINDOWS - remember running in cmd and NOT powershell) (in powershell ./ Activate.ps1 or something like that)
 # To export packages used for a project use 
 #  pip3 freeze > requirements.txt
 # To add a specific packages to the environment: 
