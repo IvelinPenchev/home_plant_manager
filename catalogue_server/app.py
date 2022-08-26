@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 import json
 
+# main server used as a catalogue for services. It distributes the file "config.json" to other nodes
 class MyServer:
     def __init__(self):
         self.globalData = "Hello World!"
@@ -17,17 +18,18 @@ my_server = MyServer()
 def index():
     return "Welcome to the home plant manager server"
 
+# main endpoint, returning the configurations with all services
 @app.route('/getconfig', methods=['GET'])
 def get_configs():
     return my_server.get_configs()
 
-# used for testing connection with the server
+# endpoint used for testing connection with the server
 @app.route('/checkconnection', methods=['GET'])
 def checkconnection():
     return "True"
 
     
 if __name__ == '__main__':
-  app.run(host='127.0.0.1', port=8080)
+    app.run(host = my_server.get_configs['catalogue']["server_url"], port = get_configs['catalogue']["port"])
 
 
