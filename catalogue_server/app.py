@@ -30,6 +30,6 @@ def checkconnection():
 
     
 if __name__ == '__main__':
-    app.run(host = my_server.get_configs['catalogue']["server_url"], port = get_configs['catalogue']["port"])
+    app.run(host = my_server.get_configs['catalogue']["server_url_stripped"], port = get_configs['catalogue']["port"])
 
 
