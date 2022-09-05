@@ -1,0 +1,41 @@
+services:
+  
+  catalogue-server-hpm:
+    build: ./catalogue_server
+    container_name: catalogue-server-hpm
+    ports:
+      - "8080:8080"
+    networks:
+      app_net:
+        ipv4_address: 172.16.10.10
+
+  data-base-hpm:
+    build: ./data_base
+    container_name: data-base-hpm
+    ports:
+      - "8090:8090"
+    depends_on:
+      - catalogue-server-hpm
+    networks:
+      app_net:
+        ipv4_address: 172.16.10.20
+
+  telegram-bot-hpm:
+    build: ./telegram_bot
+    container_name: telegram-bot-hpm
+    ports:
+      - "9930:9930"
+    depends_on:
+      - catalogue-server-hpm
+      - data-base-hpm
+    networks:
+      app_net:
+        ipv4_address: 172.16.10.30
+
+networks:
+  app_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.10.0/24"
+        - subnet: "2001:3984:3989::/64"
