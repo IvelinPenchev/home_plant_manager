@@ -31,7 +31,7 @@ All communication between the nodes of the home plant manager happens using the 
 - The Telegram bot connector is a class, which represents the work flow of the telegram bot. It requests data both from the Catalogue and the MongoDB connector. It then connects to the "plant_manager" bot if you specified the correct telegram token, or to your own bot. You need a valid Telegram bot token in order to use the software, as shown in \telegram_bot\token_example.json
 - The MongoDB connector establishes connection with MongoDB's server and performs CRUD operations with the data upon requests from the Telegram bot. You need a valid MongoDB account to use the software, as shown in \data_base\db_credentials_example.json
 
-The project can be built using the following command in the root folder:
+The project can be built using the following command in the root folder, once the token.json and db_credentials.json are present:
 
     docker-compose up
     
