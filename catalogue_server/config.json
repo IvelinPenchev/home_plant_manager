@@ -1,6 +1,7 @@
 {    
     "catalogue": 
     {
+        "server_url_stripped": "127.0.0.1",
         "server_url": "http://127.0.0.1",
         "port": "8080",
         "test_connection_url": "/checkconnection",
